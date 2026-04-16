@@ -78,7 +78,6 @@ birdclef-agent/
 
 ## Team Members
 
-- Member 1 — Role
-- Member 2 — Role
-- Member 3 — Role
-- Member 4 — Role
+- Malerba Daniele
+- Irene Perdomo Bolaños
+- Miguel Magalhães
