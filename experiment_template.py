@@ -1,15 +1,15 @@
 """
-experiment_template.py — Template stabile per esperimenti BirdCLEF 2026 (v3)
+experiment_template.py — Stable template for BirdCLEF 2026 experiments (v3)
 
-Novità v3:
-- model_type: "cnn" o "efficientnet" (l'LLM sceglie)
-- Augmentation migliorata: noise + time_shift + freq_mask
-- Input 3 canali per EfficientNet (replica mel-spec su RGB)
+What's new v3:
+- model_type: "cnn" or "efficientnet" (chosen by the LLM)
+- Improved augmentation: noise + time_shift + freq_mask
+- 3-channel input for EfficientNet (replicate mel-spec to RGB)
 
-L'agente NON modifica questo file.
-L'agente genera un file JSON con i parametri, e questo script li legge.
+The agent DOES NOT modify this file.
+The agent generates a JSON file with parameters, and this script reads them.
 
-Uso:
+Usage:
     python experiment_template.py --config experiments/params_001.json
 """
 
@@ -47,14 +47,14 @@ def load_params(config_path=None):
         with open(config_path, 'r') as f:
             overrides = json.load(f)
         defaults.update(overrides)
-        print(f"Parametri caricati da: {config_path}")
+        print(f"Parameters loaded from: {config_path}")
     else:
-        print("Usando parametri di default (baseline)")
+        print("Using default parameters (baseline)")
     return defaults
 
 
 # =============================================================
-# PIPELINE AUDIO
+# AUDIO PIPELINE
 # =============================================================
 def make_melspec(y, sr, params):
     import librosa
@@ -84,7 +84,7 @@ def load_and_process(filepath, sr=32000, duration=5, params=None):
             y = np.pad(y, (0, max_len - len(y)))
         return make_melspec(y, sr, params)
     except Exception as e:
-        print(f"  Errore con {filepath}: {e}")
+        print(f"  Error with {filepath}: {e}")
         return None
 
 
@@ -93,10 +93,10 @@ def load_and_process(filepath, sr=32000, duration=5, params=None):
 # =============================================================
 def augment_batch(X, params):
     """
-    Augmentation migliorata con 3 opzioni:
-    - noise: rumore gaussiano
-    - time_shift: sposta lo spettrogramma nel tempo
-    - freq_mask: maschera bande di frequenza casuali
+    Improved augmentation with 3 options:
+    - noise: gaussian noise
+    - time_shift: shift the spectrogram in time
+    - freq_mask: mask random frequency bands
     """
     if not params.get("use_augmentation", False):
         return X
@@ -125,10 +125,10 @@ def augment_batch(X, params):
 
 
 # =============================================================
-# MODELLI
+# MODELS
 # =============================================================
 def build_cnn(input_shape, n_classes, params):
-    """CNN custom con 3 blocchi convoluzionali (baseline)."""
+    """Custom CNN with 3 convolutional blocks (baseline)."""
     import tensorflow as tf
     from tensorflow import keras
     from keras import layers
@@ -156,40 +156,39 @@ def build_cnn(input_shape, n_classes, params):
 
 def build_efficientnet(input_shape, n_classes, params):
     """
-    EfficientNetB0 pre-addestrato come feature extractor.
+    EfficientNetB0 pretrained as a feature extractor.
 
-    Come funziona:
-    1. EfficientNetB0 è stato addestrato su ImageNet (milioni di immagini)
-    2. Sa già riconoscere pattern visivi (bordi, texture, forme)
-    3. Noi "congeliamo" i suoi pesi e aggiungiamo solo un classificatore
-    4. Opzionalmente, "scongeliamo" gli ultimi N layer per fine-tuning
+    How it works:
+    1. EfficientNetB0 was trained on ImageNet (millions of images)
+    2. It already recognizes visual patterns (edges, textures, shapes)
+    3. We "freeze" its weights and add only a classifier
+    4. Optionally, we "unfreeze" the last N layers for fine-tuning
 
-    Input: (H, W, 3) — serve 3 canali, quindi replichiamo il mel-spec
+    Input: (H, W, 3) — requires 3 channels, so we replicate the mel-spec
     """
     import tensorflow as tf
     from tensorflow import keras
     from keras import layers
 
-    # Carichiamo EfficientNetB0 senza il suo classificatore originale
-    # weights='imagenet' = pesi pre-addestrati
-    # include_top=False = togliamo il layer finale (era per 1000 classi ImageNet)
+    # Load EfficientNetB0 without its original classifier
+    # weights='imagenet' = pretrained weights
+    # include_top=False = remove the final layer (it was for 1000 ImageNet classes)
     base_model = keras.applications.EfficientNetB0(
         weights='imagenet',
         include_top=False,
         input_shape=input_shape
     )
 
-    # Congeliamo tutti i layer del backbone
+    # Freeze all backbone layers
     base_model.trainable = False
 
-    # Opzionale: scongeliamo gli ultimi N layer per fine-tuning
-    # Questo permette al modello di adattarsi meglio ai nostri dati
+    # Optional: unfreeze the last N layers for fine-tuning
+    # This allows the model to better adapt to our data
     unfreeze = params.get("unfreeze_layers", 0)
     if unfreeze > 0:
         for layer in base_model.layers[-unfreeze:]:
             layer.trainable = True
-
-    # Costruiamo il modello completo
+    # Build the full model
     model = keras.Sequential([
         keras.Input(shape=input_shape),
         base_model,
@@ -204,14 +203,14 @@ def build_efficientnet(input_shape, n_classes, params):
 
 
 def build_model(input_shape, n_classes, params):
-    """Sceglie il modello in base a model_type."""
+    """Selects the model based on model_type."""
     model_type = params.get("model_type", "cnn")
 
     if model_type == "efficientnet":
-        print(">>> Modello: EfficientNetB0 (transfer learning)")
+        print(">>> Model: EfficientNetB0 (transfer learning)")
         model = build_efficientnet(input_shape, n_classes, params)
     else:
-        print(f">>> Modello: CNN custom ({params['n_filters_1']}/{params['n_filters_2']}/{params['n_filters_3']})")
+        print(f">>> Model: Custom CNN ({params['n_filters_1']}/{params['n_filters_2']}/{params['n_filters_3']})")
         model = build_cnn(input_shape, n_classes, params)
 
     # Gradient clipping for stability
@@ -243,10 +242,10 @@ def run_experiment(params):
     start_time = time.time()
 
     print(f"\n{'='*60}")
-    print(f"ESPERIMENTO: {params['experiment_name']}")
-    print(f"Modello: {params.get('model_type', 'cnn')}")
+    print(f"EXPERIMENT: {params['experiment_name']}")
+    print(f"Model: {params.get('model_type', 'cnn')}")
     print(f"{'='*60}")
-    print(f"Parametri: {json.dumps(params, indent=2)}")
+    print(f"Parameters: {json.dumps(params, indent=2)}")
 
     # --- Carica dati ---
     data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
@@ -263,7 +262,7 @@ def run_experiment(params):
     if params["max_samples"] < len(train_df):
         train_df = train_df.sample(n=params["max_samples"], random_state=42)
 
-    print(f"\nCaricamento {len(train_df)} file audio...")
+    print(f"\nLoading {len(train_df)} audio files...")
 
     # --- Processa audio ---
     spectrograms = []
@@ -302,14 +301,14 @@ def run_experiment(params):
     # --- Prepara canali in base al modello ---
     model_type = params.get("model_type", "cnn")
     if model_type == "efficientnet":
-        # EfficientNet vuole 3 canali (RGB)
-        # Replichiamo il mel-spectrogram 3 volte
+        # EfficientNet expects 3 channels (RGB)
+        # We replicate the mel-spectrogram 3 times
         X = np.stack([X, X, X], axis=-1)
-        print(f"Dataset: {X.shape[0]} campioni, shape={X.shape[1:]} (3 canali per EfficientNet)")
+        print(f"Dataset: {X.shape[0]} samples, shape={X.shape[1:]} (3 channels for EfficientNet)")
     else:
-        # CNN custom vuole 1 canale
+        # Custom CNN expects 1 channel
         X = np.expand_dims(X, axis=-1)
-        print(f"Dataset: {X.shape[0]} campioni, shape={X.shape[1:]}")
+        print(f"Dataset: {X.shape[0]} samples, shape={X.shape[1:]}")
 
     # --- Split ---
     X_train, X_val, y_train, y_val = train_test_split(
@@ -319,7 +318,7 @@ def run_experiment(params):
     # --- Augmentation ---
     X_train = augment_batch(X_train, params)
 
-    # --- Modello ---
+    # --- Model ---
     input_shape = X_train.shape[1:]
     model = build_model(input_shape, n_classes, params)
     model.summary()
@@ -345,7 +344,7 @@ def run_experiment(params):
         verbose=1
     )
 
-    # --- Risultati ---
+    # --- Results ---
     elapsed = time.time() - start_time
     val_auc = float(max(history.history.get('val_auc', [0])))
     val_loss = float(min(history.history.get('val_loss', [999])))
@@ -366,7 +365,7 @@ def run_experiment(params):
     }
 
     print(f"\n{'='*60}")
-    print(f"RISULTATI: {params['experiment_name']}")
+    print(f"RESULTS: {params['experiment_name']}")
     print(f"{'='*60}")
     print(json.dumps(metrics))
 

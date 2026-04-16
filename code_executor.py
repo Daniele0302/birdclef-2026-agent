@@ -6,7 +6,7 @@ from typing import Dict, Any
 
 def execute_code(code: str, timeout: int = 300) -> Dict[str, Any]:
     """
-    Esegue codice Python in un file temporaneo e restituisce output/errori.
+    Executes Python code in a temporary file and returns stdout/stderr.
     """
     temp_path = None
 

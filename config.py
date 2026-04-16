@@ -1,17 +1,17 @@
 """
-config.py — Configurazione centrale del progetto BirdCLEF 2026
+config.py — Central configuration for the BirdCLEF 2026 project
 
-Tutti i parametri configurabili sono qui. Cambiando un valore qui,
-si aggiorna in tutto il progetto senza toccare altro codice.
+All configurable parameters live here. Changing a value here
+updates behavior across the project without touching other code.
 """
 
 import os
 
 # =============================================================
-# PERCORSI DEI DATI
+# DATA PATHS
 # =============================================================
-# Dove si trovano i file scaricati da Kaggle
-# Cambia questi percorsi in base a dove hai messo i dati
+# Where the files downloaded from Kaggle are located
+# Change these paths according to where you placed the data
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 TRAIN_CSV = os.path.join(DATA_DIR, "train.csv")
 TAXONOMY_CSV = os.path.join(DATA_DIR, "taxonomy.csv")
@@ -20,50 +20,50 @@ TRAIN_SOUNDSCAPES_DIR = os.path.join(DATA_DIR, "train_soundscapes")
 TRAIN_SOUNDSCAPES_LABELS = os.path.join(DATA_DIR, "train_soundscapes_labels.csv")
 SAMPLE_SUBMISSION_CSV = os.path.join(DATA_DIR, "sample_submission.csv")
 
-# Dove salvare gli esperimenti dell'agente
+# Where to save agent experiments
 EXPERIMENTS_DIR = os.path.join(os.path.dirname(__file__), "experiments")
 GENERATED_CODE_DIR = os.path.join(os.path.dirname(__file__), "generated_code")
 
 # =============================================================
-# PARAMETRI AUDIO / MEL-SPECTROGRAM
+# AUDIO / MEL-SPECTROGRAM PARAMETERS
 # =============================================================
-SAMPLE_RATE = 32000       # Frequenza di campionamento in Hz (standard BirdCLEF)
-DURATION = 5              # Durata di ogni segmento audio in secondi
-N_MELS = 128              # Numero di bande mel (altezza dell'immagine)
-N_FFT = 2048              # Dimensione della finestra FFT
-HOP_LENGTH = 512          # Spostamento tra finestre consecutive
-FMIN = 50                 # Frequenza minima (Hz) - sotto = rumore
-FMAX = 14000              # Frequenza massima (Hz) - sopra = poco utile
+SAMPLE_RATE = 32000       # Sampling rate in Hz (BirdCLEF standard)
+DURATION = 5              # Duration of each audio segment in seconds
+N_MELS = 128              # Number of mel bands (image height)
+N_FFT = 2048              # FFT window size
+HOP_LENGTH = 512          # Hop length between consecutive windows
+FMIN = 50                 # Minimum frequency (Hz) - below = noise
+FMAX = 14000              # Maximum frequency (Hz) - above = less useful
 
-# Numero di campioni audio per 5 secondi: 5 * 32000 = 160000
+# Number of audio samples for 5 seconds: 5 * 32000 = 160000
 MAX_SAMPLES = SAMPLE_RATE * DURATION
 
 # =============================================================
-# PARAMETRI DEL MODELLO
+# MODEL PARAMETERS
 # =============================================================
-N_CLASSES = 234           # Numero di specie da classificare
-INPUT_SHAPE = (N_MELS, 313, 1)  # Forma dell'input: (altezza, larghezza, canali)
-# 313 viene da: ceil(160000 / 512) + 1 = 313 frame temporali
+N_CLASSES = 234           # Number of species to classify
+INPUT_SHAPE = (N_MELS, 313, 1)  # Input shape: (height, width, channels)
+# 313 comes from: ceil(160000 / 512) + 1 = 313 time frames
 
 # =============================================================
-# PARAMETRI DELL'AGENTE
+# AGENT PARAMETERS
 # =============================================================
-MAX_ITERATIONS = 10       # Numero massimo di esperimenti
-CODE_TIMEOUT = 300        # Timeout per ogni esperimento (secondi)
+MAX_ITERATIONS = 10       # Maximum number of experiments
+CODE_TIMEOUT = 300        # Timeout for each experiment (seconds)
 
 # =============================================================
-# PARAMETRI LLM (Ollama)
+# LLM PARAMETERS (Ollama)
 # =============================================================
 OLLAMA_URL = "http://localhost:11434/api/chat"
-LLM_MODEL = "gemma2:9b"  # Modello LLM da usare (cambiabile)
-LLM_TEMPERATURE = 0.7    # Creatività: 0.0=deterministico, 1.0=molto creativo
-LLM_TIMEOUT = 120         # Timeout per la risposta dell'LLM (secondi)
-LLM_CONTEXT_SIZE = 8192  # Dimensione del contesto in token
+LLM_MODEL = "gemma2:9b"  # LLM model to use (changeable)
+LLM_TEMPERATURE = 0.7    # Creativity: 0.0=deterministic, 1.0=very creative
+LLM_TIMEOUT = 120         # Timeout for LLM response (seconds)
+LLM_CONTEXT_SIZE = 8192  # Context window size in tokens
 
 # =============================================================
-# PARAMETRI DI TRAINING (per esperimenti rapidi dell'agente)
+# TRAINING PARAMETERS (for agent quick experiments)
 # =============================================================
-QUICK_TRAIN_SAMPLES = 2000   # Campioni per esperimenti rapidi
-QUICK_TRAIN_EPOCHS = 5       # Epoche per esperimenti rapidi
-BATCH_SIZE = 32               # Dimensione del batch
-VALIDATION_SPLIT = 0.2        # Percentuale dati per la validazione
+QUICK_TRAIN_SAMPLES = 2000   # Samples for quick experiments
+QUICK_TRAIN_EPOCHS = 5       # Epochs for quick experiments
+BATCH_SIZE = 32               # Batch size
+VALIDATION_SPLIT = 0.2        # Fraction of data used for validation

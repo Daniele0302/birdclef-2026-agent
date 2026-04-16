@@ -1,10 +1,10 @@
 """
-agent.py — Agente autonomo BirdCLEF 2026 (v3 - multi-architecture)
+agent.py — Autonomous BirdCLEF 2026 agent (v3 - multi-architecture)
 
-Novità v3:
-- L'LLM può scegliere tra CNN custom e EfficientNet (transfer learning)
+What's new v3:
+- The LLM can choose between a custom CNN and EfficientNet (transfer learning)
 - Augmentation types: noise, time_shift, freq_mask, all
-- Fine-tuning: unfreeze_layers per EfficientNet
+- Fine-tuning: unfreeze_layers for EfficientNet
 """
 
 import json
@@ -140,7 +140,7 @@ def run_experiment_from_params(params, config_path):
             "success": False,
             "returncode": -1,
             "stdout": "",
-            "stderr": "TIMEOUT: esperimento superato 900 secondi",
+            "stderr": "TIMEOUT: experiment exceeded 900 seconds",
             "metrics": None
         }
 
@@ -152,55 +152,55 @@ def main():
 
     print("=" * 60)
     print("AUTONOMOUS AGENT — BirdCLEF 2026 (v3 multi-architecture)")
-    print(f"Iterazioni pianificate: {N_ITERATIONS}")
-    print(f"Architetture disponibili: CNN custom, EfficientNetB0")
+    print(f"Planned iterations: {N_ITERATIONS}")
+    print(f"Available architectures: custom CNN, EfficientNetB0")
     print("=" * 60)
 
     for iteration in range(1, N_ITERATIONS + 1):
         print(f"\n{'='*60}")
-        print(f"ITERAZIONE {iteration}/{N_ITERATIONS}")
+        print(f"ITERATION {iteration}/{N_ITERATIONS}")
         print(f"{'='*60}")
 
-        # Step 1: Chiedi parametri
-        print("\n[1/4] Chiedo all'LLM di proporre parametri...")
+        # Step 1: Request parameters
+        print("\n[1/4] Asking the LLM to propose parameters...")
         memory_summary = memory.summarize_recent(n=15)
         prompt = build_prompt(memory_summary)
         raw_response = call_llm(prompt)
-        print(f"Risposta LLM: {raw_response[:500]}")
+        print(f"LLM response: {raw_response[:500]}")
 
         # Step 2: Parse JSON
-        print("\n[2/4] Parsing parametri...")
+        print("\n[2/4] Parsing parameters...")
         params = parse_json_from_llm(raw_response)
 
         if params is None:
-            print("ERRORE: JSON non valido. Salto iterazione.")
+            print("ERROR: Invalid JSON. Skipping iteration.")
             memory.add_experiment(
                 prompt=prompt,
                 code=raw_response,
-                result={"success": False, "stdout": "", "stderr": "JSON non valido", "metrics": None},
+                result={"success": False, "stdout": "", "stderr": "Invalid JSON", "metrics": None},
                 analysis="JSON parsing failed."
             )
             continue
 
-        print(f"Modello: {params.get('model_type', 'cnn')}")
-        print(f"Parametri: {json.dumps(params, indent=2)}")
+        print(f"Model: {params.get('model_type', 'cnn')}")
+        print(f"Parameters: {json.dumps(params, indent=2)}")
 
-        # Step 3: Esegui
+        # Step 3: Run
         config_path = os.path.join(EXPERIMENTS_DIR, f"params_{iteration:03d}.json")
-        print(f"\n[3/4] Esecuzione '{params.get('experiment_name', 'unknown')}'...")
+        print(f"\n[3/4] Running '{params.get('experiment_name', 'unknown')}'...")
         start = time.time()
         result = run_experiment_from_params(params, config_path)
         elapsed = time.time() - start
 
-        print(f"Completato in {elapsed:.0f}s | Successo: {result['success']}")
+        print(f"Completed in {elapsed:.0f}s | Success: {result['success']}")
         if result['metrics']:
-            print(f"Metriche: {json.dumps(result['metrics'])}")
+            print(f"Metrics: {json.dumps(result['metrics'])}")
         elif result['stderr']:
-            print(f"Errore: {result['stderr'][:500]}")
+            print(f"Error: {result['stderr'][:500]}")
 
-        # Step 4: Analisi
-        print("\n[4/4] Analisi LLM...")
-        metrics_str = json.dumps(result['metrics']) if result['metrics'] else "Nessuna metrica"
+        # Step 4: Analysis
+        print("\n[4/4] LLM analysis...")
+        metrics_str = json.dumps(result['metrics']) if result['metrics'] else "No metrics"
         analysis_prompt = f"""Analyze this BirdCLEF experiment concisely.
 
 Parameters: {json.dumps(params)}
@@ -212,7 +212,7 @@ In 3-5 sentences: what worked, what didn't, what to try next.
 Focus on whether to use CNN or EfficientNet and why."""
 
         analysis = call_llm(analysis_prompt)
-        print(f"Analisi: {analysis[:500]}")
+        print(f"Analysis: {analysis[:500]}")
 
         memory.add_experiment(
             prompt=prompt,
@@ -221,10 +221,10 @@ Focus on whether to use CNN or EfficientNet and why."""
             analysis=analysis
         )
 
-        print(f"\nBest AUC finora: {memory.best_auc}")
+        print(f"\nBest AUC so far: {memory.best_auc}")
 
     print(f"\n{'='*60}")
-    print(f"AGENTE COMPLETATO — {N_ITERATIONS} esperimenti")
+    print(f"AGENT COMPLETED — {N_ITERATIONS} experiments")
     print(f"Best AUC: {memory.best_auc}")
     print(f"{'='*60}")
 

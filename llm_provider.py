@@ -1,42 +1,42 @@
 """
-llm_provider.py — Comunicazione con l'LLM locale via Ollama
+llm_provider.py — Communication with local LLM via Ollama
 
-Usa la libreria ollama per comunicare con il modello.
-Il modello è configurabile cambiando MODEL_NAME.
+Uses the `ollama` library to communicate with the model.
+The model can be changed by updating MODEL_NAME.
 """
 
 import ollama
 
-# Cambia questo se vuoi usare un modello diverso
-# Modelli testati: gemma4:e4b, qwen3.5:9b, gemma2:9b
+# Change this if you want to use a different model
+# Tested models: gemma4:e4b, qwen3.5:9b, gemma2:9b
 MODEL_NAME = "gemma4:e4b"
 
 
 def clean_code(text):
     """
-    Pulisce la risposta dell'LLM rimuovendo markdown fences e testo extra.
+    Cleans LLM responses by removing markdown fences and extra text.
 
-    L'LLM a volte risponde con:
+    The LLM sometimes replies with:
         ```python
-        codice qui
+        code here
         ```
-    Questa funzione estrae solo il codice/JSON pulito.
+    This function extracts only the clean code/JSON.
     """
     text = text.strip()
 
-    # Se contiene blocchi markdown, estrai il contenuto
+    # If it contains markdown fences, extract the inner content
     if "```" in text:
         parts = text.split("```")
         for part in parts:
             part = part.strip()
             if not part:
                 continue
-            # Rimuovi il tag del linguaggio (python, json, ecc.)
+            # Remove the language tag (python, json, etc.)
             if part.startswith("python"):
                 return part[len("python"):].strip()
             if part.startswith("json"):
                 return part[len("json"):].strip()
-            # Se contiene import o parentesi graffe, probabilmente è codice/JSON
+            # If it contains 'import' or starts with '{', it's likely code/JSON
             if "import " in part or part.startswith("{"):
                 return part.strip()
 
@@ -45,13 +45,13 @@ def clean_code(text):
 
 def call_llm(prompt):
     """
-    Manda un prompt all'LLM locale e restituisce la risposta pulita.
+    Sends a prompt to the local LLM and returns the cleaned response.
 
     Args:
-        prompt: stringa con il prompt completo
+        prompt: the full prompt string
 
     Returns:
-        Risposta dell'LLM come stringa (pulita da markdown)
+        The LLM response as a string (cleaned from markdown)
     """
     try:
         response = ollama.chat(
@@ -76,4 +76,4 @@ def call_llm(prompt):
         return clean_code(raw)
 
     except Exception as e:
-        return f"ERRORE LLM: {str(e)}"
+        return f"LLM ERROR: {str(e)}"

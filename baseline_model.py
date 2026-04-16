@@ -1,42 +1,42 @@
 """
-baseline_model.py — Modello CNN baseline per BirdCLEF 2026
+baseline_model.py — Baseline CNN model for BirdCLEF 2026
 
-Questo script:
-1. Carica un subset dei dati di training
-2. Crea mel-spectrogrammi
-3. Addestra una CNN semplice
-4. Stampa le metriche in formato JSON (per l'agente)
+This script:
+1. Loads a subset of the training data
+2. Creates mel-spectrograms
+3. Trains a simple CNN
+4. Prints metrics in JSON format (for the agent)
 
-È il "punto di partenza" — il primo esperimento che l'agente farebbe.
-Puoi eseguirlo manualmente per verificare che la pipeline funzioni:
+It's the "starting point" — the first experiment the agent would run.
+You can run it manually to verify the pipeline works:
 
     python baseline_model.py
 
-IMPORTANTE: devi avere i dati nella cartella data/
+IMPORTANT: you must have the data in the data/ folder
 """
 
 import os
 import json
 import numpy as np
 
-# Controlliamo che TensorFlow sia disponibile
+# Check that TensorFlow is available
 try:
     import tensorflow as tf
     from tensorflow import keras
     from keras import layers
-    print(f"TensorFlow versione: {tf.__version__}")
+    print(f"TensorFlow version: {tf.__version__}")
 except ImportError:
-    print("ERRORE: TensorFlow non installato!")
-    print("Installa con: pip install tensorflow")
+    print("ERROR: TensorFlow not installed!")
+    print("Install with: pip install tensorflow")
     exit(1)
 
-# Controlliamo che librosa sia disponibile
+# Check that librosa is available
 try:
     import librosa
-    print(f"librosa disponibile")
+    print(f"librosa available")
 except ImportError:
-    print("ERRORE: librosa non installato!")
-    print("Installa con: pip install librosa")
+    print("ERROR: librosa not installed!")
+    print("Install with: pip install librosa")
     exit(1)
 
 from config import N_CLASSES, BATCH_SIZE, QUICK_TRAIN_EPOCHS, QUICK_TRAIN_SAMPLES
@@ -45,74 +45,74 @@ from utils.data_loader import prepare_dataset
 
 def build_baseline_cnn(input_shape=(128, 313, 1), n_classes=N_CLASSES):
     """
-    Costruisce una CNN baseline semplice.
-    
-    Architettura:
-        3 blocchi convoluzionali (Conv2D + BatchNorm + MaxPool)
+    Builds a simple baseline CNN.
+
+    Architecture:
+        3 convolutional blocks (Conv2D + BatchNorm + MaxPool)
         → GlobalAveragePooling → Dense → Sigmoid
-    
+
     Args:
-        input_shape: dimensione dell'input (128, 313, 1)
-        n_classes: numero di classi da predire (234)
-    
+        input_shape: input size (128, 313, 1)
+        n_classes: number of classes to predict (234)
+
     Returns:
-        model: modello Keras compilato e pronto per il training
+        model: compiled Keras model ready for training
     """
     model = keras.Sequential([
-        # --- Definizione dell'input ---
-        # Dice al modello la forma dei dati in ingresso
+        # --- Input definition ---
+        # Tell the model the shape of incoming data
         keras.Input(shape=input_shape),
         
-        # --- Blocco 1: 32 filtri ---
-        # Conv2D: 32 filtri 3x3, activation='relu' (se valore < 0, diventa 0)
-        # padding='same' aggiunge zeri ai bordi per mantenere le dimensioni
+        # --- Block 1: 32 filters ---
+        # Conv2D: 32 filters 3x3, activation='relu' (negative values -> 0)
+        # padding='same' pads edges with zeros to keep spatial dimensions
         layers.Conv2D(32, (3, 3), activation='relu', padding='same'),
-        # BatchNormalization: normalizza i valori tra un layer e l'altro
-        # Rende il training più stabile (evita che i numeri diventino troppo grandi/piccoli)
+        # BatchNormalization: normalize values between layers
+        # Makes training more stable (prevents values from becoming too large/small)
         layers.BatchNormalization(),
-        # MaxPooling2D: dimezza altezza e larghezza
-        # Prende ogni blocco 2x2 e tiene solo il valore massimo
+        # MaxPooling2D: halves height and width
+        # Takes each 2x2 block and keeps the maximum value
         # (128, 313) → (64, 156)
         layers.MaxPooling2D((2, 2)),
         
-        # --- Blocco 2: 64 filtri ---
-        # Filtri più numerosi = pattern più complessi
+        # --- Block 2: 64 filters ---
+        # More filters = more complex patterns
         layers.Conv2D(64, (3, 3), activation='relu', padding='same'),
         layers.BatchNormalization(),
         layers.MaxPooling2D((2, 2)),  # (64, 156) → (32, 78)
         
-        # --- Blocco 3: 128 filtri ---
+        # --- Block 3: 128 filters ---
         layers.Conv2D(128, (3, 3), activation='relu', padding='same'),
         layers.BatchNormalization(),
-        # GlobalAveragePooling2D: per ogni filtro, calcola la media
-        # di TUTTI i valori spaziali. (128, 32, 78) → (128,)
-        # Vantaggi rispetto a Flatten:
-        #   - Meno parametri (meno rischio di overfitting)
-        #   - Funziona con input di dimensioni diverse
+        # GlobalAveragePooling2D: for each filter, computes the mean
+        # across ALL spatial values. (128, 32, 78) → (128,)
+        # Advantages vs Flatten:
+        #   - Fewer parameters (less risk of overfitting)
+        #   - Works with variable input sizes
         layers.GlobalAveragePooling2D(),
         
-        # --- Classificazione ---
+        # --- Classification ---
         layers.Dense(256, activation='relu'),
-        # Dropout: durante il training, "spegne" casualmente il 30% dei neuroni
-        # Questo previene l'overfitting (il modello non "memorizza" i dati)
+        # Dropout: during training, randomly "turns off" 30% of neurons
+        # This helps prevent overfitting (model doesn't "memorize" data)
         layers.Dropout(0.3),
-        # Layer finale: 234 neuroni con sigmoid
-        # sigmoid: ogni neurone produce un valore tra 0 e 1 INDIPENDENTEMENTE
-        # (diverso da softmax dove tutti sommano a 1)
-        # Questo è essenziale per il multi-label: più specie possono essere presenti
+        # Final layer: 234 neurons with sigmoid
+        # sigmoid: each neuron outputs a value between 0 and 1 INDEPENDENTLY
+        # (different from softmax where all sum to 1)
+        # This is essential for multi-label: multiple species can be present
         layers.Dense(n_classes, activation='sigmoid')
     ])
     
-    # --- Compilazione ---
-    # Definiamo come il modello impara
+    # --- Compilation ---
+    # Define how the model learns
     model.compile(
-        # binary_crossentropy: loss per classificazione multi-label
-        # Tratta ogni specie come una decisione binaria indipendente (sì/no)
+        # binary_crossentropy: loss for multi-label classification
+        # Treats each species as an independent binary decision (yes/no)
         loss='binary_crossentropy',
-        # Adam: ottimizzatore adattivo, il più usato
-        # learning_rate=0.001: velocità di apprendimento (default di Adam)
+        # Adam: adaptive optimizer, widely used
+        # learning_rate=0.001: learning rate (default for Adam)
         optimizer=keras.optimizers.Adam(learning_rate=0.001),
-        # Metriche: AUC è la metrica della competizione
+        # Metrics: AUC is the competition metric
         metrics=[keras.metrics.AUC(name='auc')]
     )
     
@@ -121,41 +121,44 @@ def build_baseline_cnn(input_shape=(128, 313, 1), n_classes=N_CLASSES):
 
 def main():
     """
-    Esegue il training del modello baseline.
-    Stampa le metriche in formato JSON alla fine (per l'agente).
+    Runs training for the baseline model.
+    Prints metrics in JSON format at the end (for the agent).
     """
     print("=" * 60)
     print("BASELINE MODEL — BirdCLEF 2026")
     print("=" * 60)
     
-    # --- Step 1: Preparare i dati ---
-    print("\n[1/3] Preparazione dati...")
+    # --- Step 1: Prepare data ---
+    print("\n[1/3] Preparing data...")
     X_train, X_val, y_train, y_val, label_names = prepare_dataset(
         max_samples=QUICK_TRAIN_SAMPLES
     )
     
-    # --- Step 2: Costruire il modello ---
-    print("\n[2/3] Costruzione modello...")
+    # --- Step 2: Build model ---
+    print("\n[2/3] Building model...")
     model = build_baseline_cnn()
-    model.summary()  # stampa un riassunto dell'architettura
+    model.summary()  # Print model architecture and number of parameters
     
     # --- Step 3: Training ---
     print("\n[3/3] Training...")
     
-    # Callback: azioni automatiche durante il training
+    # Callbacks: EarlyStopping and ReduceLROnPlateau
     callbacks = [
-        # EarlyStopping: ferma il training se la metrica non migliora
-        # patience=3: aspetta 3 epoche senza miglioramento prima di fermarsi
-        # restore_best_weights=True: alla fine, usa i pesi migliori (non gli ultimi)
+        # EarlyStopping: stop training if the metric doesn't improve
+        # patience=3: wait 3 epochs without improvement before stopping
+        # restore_best_weights=True: at the end, use the best weights (not the last)
         keras.callbacks.EarlyStopping(
             monitor='val_auc',
             patience=3,
             restore_best_weights=True,
-            mode='max'  # 'max' perché vogliamo AUC il più alto possibile
+            mode='max'  # 'max' because we want to maximize AUC
         ),
-        # ReduceLROnPlateau: riduce il learning rate quando smette di migliorare
-        # factor=0.5: dimezza il learning rate
-        # patience=2: aspetta 2 epoche prima di ridurre
+        # ReduceLROnPlateau: reduce the learning rate when it stops improving
+        # factor=0.5: halve the learning rate
+        # patience=2: wait 2 epochs before reducing
+        # ReduceLROnPlateau: reduce the learning rate when it stops improving
+        # factor=0.5: halve the learning rate
+        # patience=2: wait 2 epochs before reducing
         keras.callbacks.ReduceLROnPlateau(
             monitor='val_auc',
             factor=0.5,
@@ -164,32 +167,32 @@ def main():
         )
     ]
     
-    # model.fit() lancia il training
-    # Restituisce un oggetto history con le metriche di ogni epoca
+    # model.fit returns a History object with training metrics for each epoch
+    # We will extract the final AUC and loss from this object to print at the end
     history = model.fit(
-        X_train, y_train,                     # dati di training
-        validation_data=(X_val, y_val),        # dati di validazione
-        epochs=QUICK_TRAIN_EPOCHS,             # numero massimo di epoche
-        batch_size=BATCH_SIZE,                 # campioni per batch
-        callbacks=callbacks,                   # azioni automatiche
-        verbose=1                              # mostra la barra di progresso
+        X_train, y_train,                     # training data
+        validation_data=(X_val, y_val),        # validation data
+        epochs=QUICK_TRAIN_EPOCHS,             # maximum number of epochs
+        batch_size=BATCH_SIZE,                 # samples per batch
+        callbacks=callbacks,                   # automatic actions
+        verbose=1                              # show progress bar
     )
     
-    # --- Step 4: Risultati ---
-    # Estraiamo le metriche finali dalla history
-    # history.history è un dizionario con le metriche per ogni epoca
-    # Prendiamo l'ultimo valore (l'ultima epoca completata)
+    # --- Step 4: Results ---
+    # Extract final metrics from history
+    # history.history is a dict with metrics per epoch
+    # We take the final value (last completed epoch)
     val_auc = float(max(history.history.get('val_auc', [0])))
     val_loss = float(min(history.history.get('val_loss', [999])))
     train_auc = float(max(history.history.get('auc', [0])))
     epochs_trained = len(history.history['loss'])
     
-    # Salviamo il modello
+    # save the model (optional, but useful for the agent to analyze later)
     model.save('best_model.keras')
-    print("\nModello salvato come 'best_model.keras'")
+    print("\nModel saved as 'best_model.keras'")
     
-    # Stampiamo le metriche in formato JSON
-    # L'agente le leggerà da stdout per capire come è andato l'esperimento
+    # Print the metrics in JSON format
+    # The agent will read them from stdout to understand how the experiment went
     metrics = {
         "val_auc": round(val_auc, 4),
         "val_loss": round(val_loss, 4),
