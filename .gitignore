@@ -1,0 +1,9 @@
+# Dati (troppo pesanti per GitHub)
+data/
+__pycache__/
+.venv/
+*.pyc
+
+# File temporanei
+*.tmp
+.DS_Store

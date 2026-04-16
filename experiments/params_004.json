@@ -1,0 +1,22 @@
+{
+  "experiment_name": "efficientnet_time_shift_exploration",
+  "model_type": "efficientnet",
+  "learning_rate": 0.0002,
+  "batch_size": 32,
+  "epochs": 5,
+  "n_filters_1": 0,
+  "n_filters_2": 0,
+  "n_filters_3": 0,
+  "dropout_rate": 0.4,
+  "dense_units": 256,
+  "n_mels": 128,
+  "n_fft": 2048,
+  "hop_length": 512,
+  "fmin": 50,
+  "fmax": 14000,
+  "max_samples": 3000,
+  "use_augmentation": true,
+  "augmentation_type": "time_shift",
+  "augmentation_noise": 0.0,
+  "unfreeze_layers": 0
+}

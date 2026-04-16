@@ -1,0 +1,30 @@
+# requirements.txt — Dipendenze per BirdCLEF 2026 Agent
+#
+# Installa tutto con:  pip install -r requirements.txt
+#
+# Se hai problemi con tensorflow, prova:
+#   pip install tensorflow==2.15.0
+# Oppure su Mac M1/M2/M3:
+#   pip install tensorflow-macos tensorflow-metal
+
+# === Framework di Deep Learning ===
+tensorflow>=2.13.0        # Rete neurale (CNN, training, ecc.)
+
+# === Audio Processing ===
+librosa>=0.10.0           # Caricamento audio + mel-spectrogram
+soundfile>=0.12.0         # Backend per leggere file .ogg
+
+# === Data Science ===
+numpy>=1.24.0             # Operazioni su array numerici
+pandas>=2.0.0             # Manipolazione tabelle (CSV)
+scikit-learn>=1.3.0       # Train/test split, metriche
+
+# === Visualizzazione (opzionale, per notebook) ===
+matplotlib>=3.7.0         # Grafici e plot
+
+# === Comunicazione con LLM ===
+requests>=2.31.0          # Per chiamare l'API di Ollama
+ollama>=0.1.0             # Client Python per Ollama (alternativa a requests)
+
+# === Utilities ===
+tqdm>=4.65.0              # Barre di progresso
