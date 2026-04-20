@@ -61,9 +61,9 @@ PARAMETER RANGES:
 - epochs: 3 to 15
 - dropout_rate: 0.1 to 0.5
 - dense_units: 64 to 512
-- max_samples: 1000 to 3000
+- max_samples: 2000 to 5000
 - use_augmentation: true or false
-- augmentation_type: "noise", "time_shift", "freq_mask", or "all"
+- augmentation_type: "noise", "time_shift", "freq_mask","specaugment", or "all"
 - unfreeze_layers: 0 (frozen) to 20 (fine-tune last 20 layers). Only for efficientnet.
 
 STRATEGY:
@@ -115,7 +115,7 @@ def run_experiment_from_params(params, config_path):
             ['python3', 'experiment_template.py', '--config', config_path],
             capture_output=True,
             text=True,
-            timeout=900  # 15 min per EfficientNet
+            timeout=1800  # 30 min per EfficientNet con fine-tuning a due fasi
         )
 
         metrics = None
@@ -140,7 +140,7 @@ def run_experiment_from_params(params, config_path):
             "success": False,
             "returncode": -1,
             "stdout": "",
-            "stderr": "TIMEOUT: experiment exceeded 900 seconds",
+            "stderr": "TIMEOUT: experiment exceeded 1800 seconds",
             "metrics": None
         }
 
@@ -148,7 +148,7 @@ def run_experiment_from_params(params, config_path):
 def main():
     memory = ExperimentMemory()
 
-    N_ITERATIONS = 8
+    N_ITERATIONS = 10
 
     print("=" * 60)
     print("AUTONOMOUS AGENT — BirdCLEF 2026 (v3 multi-architecture)")

@@ -1,14 +1,14 @@
 {
-  "experiment_name": "efficientnet_fine_tune_freq_mask",
+  "experiment_name": "efficientnet_freqmask_explore",
   "model_type": "efficientnet",
-  "learning_rate": 0.0001,
-  "batch_size": 64,
+  "learning_rate": 0.0002,
+  "batch_size": 32,
   "epochs": 10,
   "n_filters_1": 0,
   "n_filters_2": 0,
   "n_filters_3": 0,
   "dropout_rate": 0.3,
-  "dense_units": 512,
+  "dense_units": 256,
   "n_mels": 128,
   "n_fft": 2048,
   "hop_length": 512,
@@ -18,5 +18,5 @@
   "use_augmentation": true,
   "augmentation_type": "freq_mask",
   "augmentation_noise": 0.01,
-  "unfreeze_layers": 10
+  "unfreeze_layers": 0
 }

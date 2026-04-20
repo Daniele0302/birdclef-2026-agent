@@ -213,3 +213,155 @@ def process_batch(filepaths, max_workers=4):
             valid_indices.append(i)
     
     return mels, valid_indices
+
+# ─── AUGMENTATION FUNCTIONS ─────────────────────────────────────────────────
+
+def time_shift(y, sr=SAMPLE_RATE, max_shift_seconds=1.0):
+    """
+    Shifts the audio signal along the time axis.
+
+    Example: a bird call starting at second 1.5 gets shifted
+    to start at second 0.3 — the model learns that the temporal
+    position of the call is not important.
+
+    Args:
+        y: 1D audio array
+        max_shift_seconds: maximum shift in seconds (default 1s)
+
+    Returns:
+        y_shifted: shifted audio (same length, zeros at the border)
+    """
+    max_shift = int(max_shift_seconds * sr)
+    shift = np.random.randint(-max_shift, max_shift)
+    y_shifted = np.roll(y, shift)
+    if shift > 0:
+        y_shifted[:shift] = 0
+    elif shift < 0:
+        y_shifted[shift:] = 0
+    return y_shifted
+
+
+def freq_mask(mel_spec, num_masks=1, max_width=20):
+    """
+    SpecAugment: masks random frequency bands in the spectrogram.
+
+    Example: masks frequencies between 40Hz and 200Hz — the model
+    learns to recognise bird calls even with partial information.
+
+    Args:
+        mel_spec: array (128, 313) — the spectrogram
+        num_masks: number of masks to apply (default 1)
+        max_width: maximum mask width in mel bands (default 20)
+
+    Returns:
+        mel_spec: spectrogram with masked frequency bands (set to 0)
+    """
+    mel_spec = mel_spec.copy()
+    num_mel_bins = mel_spec.shape[0]  # 128
+
+    for _ in range(num_masks):
+        width = np.random.randint(1, max_width)
+        start = np.random.randint(0, num_mel_bins - width)
+        mel_spec[start:start + width, :] = 0
+
+    return mel_spec
+
+
+def time_mask(mel_spec, num_masks=1, max_width=40):
+    """
+    SpecAugment: masks random time windows in the spectrogram.
+
+    Example: masks frames from second 1.2 to second 1.8 — the model
+    learns to recognise bird calls even if part of them is missing.
+
+    Args:
+        mel_spec: array (128, 313)
+        num_masks: number of masks to apply (default 1)
+        max_width: maximum mask width in time frames (default 40)
+
+    Returns:
+        mel_spec: spectrogram with masked time windows (set to 0)
+    """
+    mel_spec = mel_spec.copy()
+    num_time_frames = mel_spec.shape[1]  # 313
+
+    for _ in range(num_masks):
+        width = np.random.randint(1, max_width)
+        start = np.random.randint(0, num_time_frames - width)
+        mel_spec[:, start:start + width] = 0
+
+    return mel_spec
+
+
+def apply_specaugment(mel_spec, freq_masks=2, time_masks=2,
+                      freq_width=20, time_width=40):
+    """
+    Full SpecAugment: applies freq_mask + time_mask simultaneously.
+
+    This is the method from Park et al. (2019) which demonstrated
+    significant improvements for audio classification tasks.
+
+    Args:
+        mel_spec: array (128, 313)
+        freq_masks: number of frequency masks (default 2)
+        time_masks: number of time masks (default 2)
+        freq_width: max frequency mask width in mel bands (default 20)
+        time_width: max time mask width in frames (default 40)
+
+    Returns:
+        mel_spec: spectrogram with both masks applied
+    """
+    mel_spec = freq_mask(mel_spec, num_masks=freq_masks, max_width=freq_width)
+    mel_spec = time_mask(mel_spec, num_masks=time_masks, max_width=time_width)
+    return mel_spec
+
+
+def add_noise(y, noise_level=0.005):
+    """
+    Adds Gaussian noise to the audio signal.
+
+    Simulates the noisy conditions of real-world soundscapes
+    (wind, rain, other animals in the background).
+
+    Args:
+        y: 1D audio array
+        noise_level: noise intensity (default 0.005 = very light)
+
+    Returns:
+        y_noisy: audio with added noise
+    """
+    noise = np.random.normal(0, noise_level, len(y))
+    return y + noise
+
+
+def augment_audio(y, mel_spec, augmentation_type='specaugment',
+                  noise_level=0.005):
+    """
+    Main augmentation function. Applies the chosen strategy.
+
+    Args:
+        y: 1D audio array (for pre-spectrogram augmentation)
+        mel_spec: array (128, 313) (for post-spectrogram augmentation)
+        augmentation_type: 'time_shift', 'freq_mask', 'specaugment', 'all'
+        noise_level: noise intensity (if used)
+
+    Returns:
+        mel_spec_aug: augmented spectrogram (128, 313)
+    """
+    if augmentation_type == 'time_shift':
+        y = time_shift(y)
+        mel_spec = audio_to_melspec(y)
+
+    elif augmentation_type == 'freq_mask':
+        mel_spec = freq_mask(mel_spec, num_masks=2, max_width=20)
+
+    elif augmentation_type == 'specaugment':
+        mel_spec = apply_specaugment(mel_spec)
+
+    elif augmentation_type == 'all':
+        y = time_shift(y)
+        y = add_noise(y, noise_level=noise_level)
+        mel_spec = audio_to_melspec(y)
+        mel_spec = apply_specaugment(mel_spec)
+
+    return mel_spec

@@ -93,10 +93,12 @@ def load_and_process(filepath, sr=32000, duration=5, params=None):
 # =============================================================
 def augment_batch(X, params):
     """
-    Improved augmentation with 3 options:
+    Augmentation with 4 options:
     - noise: gaussian noise
     - time_shift: shift the spectrogram in time
     - freq_mask: mask random frequency bands
+    - specaugment: simultaneous freq + time masking (Park et al. 2019)
+    - all: combines all strategies
     """
     if not params.get("use_augmentation", False):
         return X
@@ -104,26 +106,74 @@ def augment_batch(X, params):
     aug_type = params.get("augmentation_type", "noise")
     X_aug = X.copy()
 
-    if aug_type == "noise" or aug_type == "all":
+    if aug_type == "noise":
         noise_std = params.get("augmentation_noise", 0.01)
         noise = np.random.normal(0, noise_std, X_aug.shape).astype(np.float32)
         X_aug = X_aug + noise
 
-    if aug_type == "time_shift" or aug_type == "all":
+    elif aug_type == "time_shift":
         for i in range(len(X_aug)):
             shift = np.random.randint(-20, 20)
             X_aug[i] = np.roll(X_aug[i], shift, axis=1)
 
-    if aug_type == "freq_mask" or aug_type == "all":
+    elif aug_type == "freq_mask":
         for i in range(len(X_aug)):
             n_mels = X_aug[i].shape[0]
             f_start = np.random.randint(0, n_mels - 10)
-            f_width = np.random.randint(5, 15)
+            f_width = np.random.randint(5, 20)
             X_aug[i, f_start:f_start + f_width, :] = 0
 
+    elif aug_type == "specaugment":
+        # Full SpecAugment: frequency masking + time masking simultaneously
+        # Based on Park et al. (2019)
+        for i in range(len(X_aug)):
+            spec = X_aug[i]
+            n_mels = spec.shape[0]       # 128
+            n_frames = spec.shape[1]     # 313
+
+            # Apply 2 frequency masks
+            for _ in range(2):
+                f_width = np.random.randint(1, 20)
+                f_start = np.random.randint(0, n_mels - f_width)
+                spec[f_start:f_start + f_width, :] = 0
+
+            # Apply 2 time masks
+            for _ in range(2):
+                t_width = np.random.randint(1, 40)
+                t_start = np.random.randint(0, n_frames - t_width)
+                spec[:, t_start:t_start + t_width] = 0
+
+            X_aug[i] = spec
+
+    elif aug_type == "all":
+        # Everything: time shift + noise + full SpecAugment
+        noise_std = params.get("augmentation_noise", 0.005)
+        noise = np.random.normal(0, noise_std, X_aug.shape).astype(np.float32)
+        X_aug = X_aug + noise
+
+        for i in range(len(X_aug)):
+            # Time shift
+            shift = np.random.randint(-20, 20)
+            X_aug[i] = np.roll(X_aug[i], shift, axis=1)
+
+            # SpecAugment
+            spec = X_aug[i]
+            n_mels = spec.shape[0]
+            n_frames = spec.shape[1]
+
+            for _ in range(2):
+                f_width = np.random.randint(1, 20)
+                f_start = np.random.randint(0, n_mels - f_width)
+                spec[f_start:f_start + f_width, :] = 0
+
+            for _ in range(2):
+                t_width = np.random.randint(1, 40)
+                t_start = np.random.randint(0, n_frames - t_width)
+                spec[:, t_start:t_start + t_width] = 0
+
+            X_aug[i] = spec
+
     return np.clip(X_aug, 0, 1)
-
-
 # =============================================================
 # MODELS
 # =============================================================
@@ -156,77 +206,92 @@ def build_cnn(input_shape, n_classes, params):
 
 def build_efficientnet(input_shape, n_classes, params):
     """
-    EfficientNetB0 pretrained as a feature extractor.
+    EfficientNetB0 with two-phase training strategy.
 
-    How it works:
-    1. EfficientNetB0 was trained on ImageNet (millions of images)
-    2. It already recognizes visual patterns (edges, textures, shapes)
-    3. We "freeze" its weights and add only a classifier
-    4. Optionally, we "unfreeze" the last N layers for fine-tuning
+    Phase 1 (always): freeze the entire base, train only the classifier.
+    Phase 2 (optional): unfreeze the top N layers with a very low lr.
 
-    Input: (H, W, 3) — requires 3 channels, so we replicate the mel-spec
+    Following Chollet (2021) Chapter 8.3.2:
+    'It is only possible to fine-tune the top layers once the classifier
+    on top has already been trained. If the classifier is not already
+    trained, the error signal will be too large and will destroy the
+    representations previously learned.'
     """
     import tensorflow as tf
     from tensorflow import keras
     from keras import layers
 
-    # Load EfficientNetB0 without its original classifier
-    # weights='imagenet' = pretrained weights
-    # include_top=False = remove the final layer (it was for 1000 ImageNet classes)
+    # Load EfficientNetB0 pretrained on ImageNet
     base_model = keras.applications.EfficientNetB0(
         weights='imagenet',
         include_top=False,
         input_shape=input_shape
     )
 
-    # Freeze all backbone layers
+    # Phase 1: freeze ALL base layers
     base_model.trainable = False
 
-    # Optional: unfreeze the last N layers for fine-tuning
-    # This allows the model to better adapt to our data
-    unfreeze = params.get("unfreeze_layers", 0)
-    if unfreeze > 0:
-        for layer in base_model.layers[-unfreeze:]:
-            layer.trainable = True
-    # Build the full model
-    model = keras.Sequential([
-        keras.Input(shape=input_shape),
-        base_model,
-        layers.GlobalAveragePooling2D(),
-        layers.BatchNormalization(),
-        layers.Dense(params["dense_units"], activation='relu'),
-        layers.Dropout(params["dropout_rate"]),
-        layers.Dense(n_classes, activation='sigmoid')
-    ])
+    # Build the full model with frozen base
+    inputs = keras.Input(shape=input_shape)
+    x = base_model(inputs, training=False)
+    # training=False keeps BatchNorm layers in inference mode
+    # even when we later unfreeze layers — this is critical
+    x = layers.GlobalAveragePooling2D()(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Dense(params["dense_units"], activation='relu')(x)
+    x = layers.Dropout(params["dropout_rate"])(x)
+    outputs = layers.Dense(n_classes, activation='sigmoid')(x)
 
-    return model
+    model = keras.Model(inputs, outputs)
+
+    return model, base_model
 
 
 def build_model(input_shape, n_classes, params):
-    """Selects the model based on model_type."""
+    """
+    Builds the model and applies the two-phase fine-tuning strategy.
+
+    Phase 1: train classifier only (base frozen)
+    Phase 2: unfreeze top N layers with very low lr (if unfreeze_layers > 0)
+    """
+    from tensorflow import keras
+
     model_type = params.get("model_type", "cnn")
 
     if model_type == "efficientnet":
         print(">>> Model: EfficientNetB0 (transfer learning)")
-        model = build_efficientnet(input_shape, n_classes, params)
+        model, base_model = build_efficientnet(input_shape, n_classes, params)
+
+        # Phase 1 optimizer: normal learning rate for the classifier
+        optimizer_phase1 = keras.optimizers.Adam(
+            learning_rate=params["learning_rate"],
+            clipnorm=1.0
+        )
+        model.compile(
+            loss='binary_crossentropy',
+            optimizer=optimizer_phase1,
+            metrics=[keras.metrics.AUC(name='auc')]
+        )
+        print(f"Phase 1: base frozen, training classifier only")
+        print(f"  lr={params['learning_rate']}, "
+              f"unfreeze={params.get('unfreeze_layers', 0)} layers planned for Phase 2")
+
     else:
-        print(f">>> Model: Custom CNN ({params['n_filters_1']}/{params['n_filters_2']}/{params['n_filters_3']})")
+        print(f">>> Model: Custom CNN")
         model = build_cnn(input_shape, n_classes, params)
+        base_model = None
 
-    # Gradient clipping for stability
-    optimizer = keras.optimizers.Adam(
-        learning_rate=params["learning_rate"],
-        clipnorm=1.0
-    )
-    
-    # Label smoothing for better generalization
-    model.compile(
-    loss='binary_crossentropy',
-    optimizer=optimizer,
-    metrics=[keras.metrics.AUC(name='auc')]
-)
-    return model
+        optimizer = keras.optimizers.Adam(
+            learning_rate=params["learning_rate"],
+            clipnorm=1.0
+        )
+        model.compile(
+            loss='binary_crossentropy',
+            optimizer=optimizer,
+            metrics=[keras.metrics.AUC(name='auc')]
+        )
 
+    return model, base_model
 
 # =============================================================
 # MAIN
@@ -265,11 +330,14 @@ def run_experiment(params):
     print(f"\nLoading {len(train_df)} audio files...")
 
     # --- Processa audio ---
+    # --- Load train_audio clips ---
+    print(f"\nLoading {len(train_df)} train_audio clips...")
     spectrograms = []
     labels = []
+
     for idx, (_, row) in enumerate(train_df.iterrows()):
         if idx % 200 == 0:
-            print(f"  {idx}/{len(train_df)} ({idx/len(train_df)*100:.0f}%)")
+            print(f"  clips: {idx}/{len(train_df)}")
 
         filepath = os.path.join(audio_dir, row['filename'])
         if not os.path.exists(filepath):
@@ -295,9 +363,77 @@ def run_experiment(params):
         spectrograms.append(mel)
         labels.append(label_vec)
 
+    print(f"  Loaded {len(spectrograms)} clips from train_audio")
+
+    # --- Load train_soundscapes windows ---
+    soundscapes_csv = os.path.join(data_dir, "train_soundscapes_labels.csv")
+    soundscapes_dir = os.path.join(data_dir, "train_soundscapes")
+
+    if os.path.exists(soundscapes_csv) and os.path.exists(soundscapes_dir):
+        print(f"\nLoading train_soundscapes windows...")
+        sc_df = pd.read_csv(soundscapes_csv)
+
+        # Use max_samples/4 soundscape windows to keep balance
+        max_sc = min(len(sc_df), params["max_samples"])
+        sc_df = sc_df.sample(n=max_sc, random_state=42)
+
+        sc_loaded = 0
+        for idx, (_, row) in enumerate(sc_df.iterrows()):
+            if idx % 200 == 0:
+                print(f"  soundscapes: {idx}/{len(sc_df)}")
+
+            filepath = os.path.join(soundscapes_dir, row['filename'])
+            if not os.path.exists(filepath):
+                continue
+
+            # Convert start time to seconds
+            # Format is HH:MM:SS
+            start_str = str(row['start'])
+            parts = start_str.split(':')
+            start_sec = int(parts[0])*3600 + int(parts[1])*60 + int(parts[2])
+
+            # Load 5-second window
+            try:
+                import librosa
+                y, sr = librosa.load(
+                    filepath,
+                    sr=32000,
+                    offset=start_sec,
+                    duration=5.0
+                )
+                max_len = 32000 * 5
+                if len(y) < max_len:
+                    y = np.pad(y, (0, max_len - len(y)))
+                elif len(y) > max_len:
+                    y = y[:max_len]
+
+                mel = make_melspec(y, 32000, params)
+                if mel is None:
+                    continue
+
+            except Exception as e:
+                continue
+
+            # Build label vector from primary_label column
+            # Labels are separated by semicolons: "22961;23158;24321"
+            label_vec = np.zeros(n_classes, dtype=np.float32)
+            labels_str = str(row['primary_label'])
+            for lbl in labels_str.split(';'):
+                lbl = lbl.strip()
+                if lbl in label_to_idx:
+                    label_vec[label_to_idx[lbl]] = 1.0
+
+            spectrograms.append(mel)
+            labels.append(label_vec)
+            sc_loaded += 1
+
+        print(f"  Loaded {sc_loaded} windows from train_soundscapes")
+    else:
+        print("  train_soundscapes not found, using only train_audio")
+
+    print(f"\nTotal samples: {len(spectrograms)}")
     X = np.array(spectrograms)
     y = np.array(labels)
-
     # --- Prepara canali in base al modello ---
     model_type = params.get("model_type", "cnn")
     if model_type == "efficientnet":
@@ -320,10 +456,10 @@ def run_experiment(params):
 
     # --- Model ---
     input_shape = X_train.shape[1:]
-    model = build_model(input_shape, n_classes, params)
+    model, base_model = build_model(input_shape, n_classes, params)
     model.summary()
 
-    # --- Training ---
+    # --- Callbacks ---
     callbacks = [
         keras.callbacks.EarlyStopping(
             monitor='val_auc', patience=3,
@@ -335,14 +471,57 @@ def run_experiment(params):
         )
     ]
 
+    # --- Phase 1 Training: classifier only (base frozen) ---
+    unfreeze = params.get("unfreeze_layers", 0)
+
+    # If fine-tuning is planned, use half the epochs in phase 1
+    phase1_epochs = max(3, params["epochs"] // 2) if unfreeze > 0 else params["epochs"]
+
+    print(f"\n--- Phase 1: training classifier (base frozen) ---")
     history = model.fit(
         X_train, y_train,
         validation_data=(X_val, y_val),
-        epochs=params["epochs"],
+        epochs=phase1_epochs,
         batch_size=params["batch_size"],
         callbacks=callbacks,
         verbose=1
     )
+
+    # --- Phase 2 Training: fine-tune top layers (Chollet cap. 8.3.2) ---
+    if unfreeze > 0 and base_model is not None:
+        print(f"\n--- Phase 2: unfreezing top {unfreeze} layers with lr=1e-5 ---")
+
+        # Unfreeze only the top N layers
+        base_model.trainable = True
+        for layer in base_model.layers[:-unfreeze]:
+            layer.trainable = False
+
+        # Recompile with VERY low learning rate
+        model.compile(
+            loss='binary_crossentropy',
+            optimizer=keras.optimizers.Adam(
+                learning_rate=1e-5,
+                clipnorm=1.0
+            ),
+            metrics=[keras.metrics.AUC(name='auc')]
+        )
+
+        remaining_epochs = params["epochs"] - phase1_epochs
+
+        history2 = model.fit(
+            X_train, y_train,
+            validation_data=(X_val, y_val),
+            epochs=remaining_epochs,
+            batch_size=params["batch_size"],
+            callbacks=callbacks,
+            verbose=1
+        )
+
+        # Merge both histories
+        history.history['val_auc'] += history2.history.get('val_auc', [])
+        history.history['val_loss'] += history2.history.get('val_loss', [])
+        history.history['auc'] += history2.history.get('auc', [])
+        history.history['loss'] += history2.history.get('loss', [])
 
     # --- Results ---
     elapsed = time.time() - start_time

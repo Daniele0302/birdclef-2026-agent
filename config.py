@@ -55,7 +55,7 @@ CODE_TIMEOUT = 300        # Timeout for each experiment (seconds)
 # LLM PARAMETERS (Ollama)
 # =============================================================
 OLLAMA_URL = "http://localhost:11434/api/chat"
-LLM_MODEL = "gemma2:9b"  # LLM model to use (changeable)
+LLM_MODEL = "gemma4:e4b"  # LLM model to use (changeable)
 LLM_TEMPERATURE = 0.7    # Creativity: 0.0=deterministic, 1.0=very creative
 LLM_TIMEOUT = 120         # Timeout for LLM response (seconds)
 LLM_CONTEXT_SIZE = 8192  # Context window size in tokens
@@ -63,7 +63,7 @@ LLM_CONTEXT_SIZE = 8192  # Context window size in tokens
 # =============================================================
 # TRAINING PARAMETERS (for agent quick experiments)
 # =============================================================
-QUICK_TRAIN_SAMPLES = 2000   # Samples for quick experiments
-QUICK_TRAIN_EPOCHS = 5       # Epochs for quick experiments
+QUICK_TRAIN_SAMPLES = 3000   # Samples for quick experiments
+QUICK_TRAIN_EPOCHS = 8       # Epochs for quick experiments
 BATCH_SIZE = 32               # Batch size
 VALIDATION_SPLIT = 0.2        # Fraction of data used for validation

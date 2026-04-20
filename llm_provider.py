@@ -6,10 +6,9 @@ The model can be changed by updating MODEL_NAME.
 """
 
 import ollama
+from config import LLM_MODEL
 
-# Change this if you want to use a different model
-# Tested models: gemma4:e4b, qwen3.5:9b, gemma2:9b
-MODEL_NAME = "gemma4:e4b"
+MODEL_NAME = LLM_MODEL
 
 
 def clean_code(text):
