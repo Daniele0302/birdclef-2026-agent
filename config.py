@@ -30,10 +30,10 @@ GENERATED_CODE_DIR = os.path.join(os.path.dirname(__file__), "generated_code")
 SAMPLE_RATE = 32000       # Sampling rate in Hz (BirdCLEF standard)
 DURATION = 5              # Duration of each audio segment in seconds
 N_MELS = 128              # Number of mel bands (image height)
-N_FFT = 2048              # FFT window size
-HOP_LENGTH = 512          # Hop length between consecutive windows
-FMIN = 50                 # Minimum frequency (Hz) - below = noise
-FMAX = 14000              # Maximum frequency (Hz) - above = less useful
+N_FFT = 1024              # FFT window size
+HOP_LENGTH = 320          # Hop length between consecutive windows
+FMIN = 20                 # Minimum frequency (Hz) - below = noise
+FMAX = 16000              # Maximum frequency (Hz) - above = less useful
 
 # Number of audio samples for 5 seconds: 5 * 32000 = 160000
 MAX_SAMPLES = SAMPLE_RATE * DURATION
