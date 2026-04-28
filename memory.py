@@ -113,15 +113,18 @@ class ExperimentMemory:
                 if isinstance(params, dict) and "learning_rate" in params:
                     params_str = (
                         f"lr={params.get('learning_rate')}, "
-                        f"filters={params.get('n_filters_1')}/{params.get('n_filters_2')}/{params.get('n_filters_3')}, "
+                        f"n_mels={params.get('n_mels', 128)}, "
+                        f"n_fft={params.get('n_fft', 2048)}, "
+                        f"hop={params.get('hop_length', 512)}, "
+                        f"fmin={params.get('fmin', 50)}, "
+                        f"fmax={params.get('fmax', 14000)}, "
+                        f"top_db={params.get('top_db', 80.0)}, "
+                        f"noise={params.get('augmentation_noise', 0.01)}, "
                         f"dropout={params.get('dropout_rate')}, "
-                        f"dense={params.get('dense_units')}, "
-                        f"batch={params.get('batch_size')}, "
-                        f"aug={'ON' if params.get('use_augmentation') else 'OFF'}"
+                        f"batch={params.get('batch_size')}"
                     )
             except Exception:
                 params_str = "custom experiment"
-
             if success and metrics:
                 val_auc = metrics.get('val_auc', 0)
                 val_loss = metrics.get('val_loss', 0)

@@ -322,5 +322,176 @@
     },
     "analysis": "The combination of EfficientNet and frequency mask augmentation is promising, as evidenced by the validation AUC (0.7255) being notably higher than the training AUC, indicating decent generalization. The use of EfficientNet is advantageous because it scales pre-trained CNN knowledge efficiently across multiple layers, providing a robust feature extractor for spectrogram inputs compared to a standard, ad-hoc CNN architecture. Improvement is needed in managing the hyperparameter balance; the large dropout rate (0.3) and high number of unfrozen layers could be contributing to the generalization gap. Next, attempt reducing the dropout rate and monitoring convergence with a learning rate scheduler (e.g., cosine annealing) to better capture the best observed AUC (0.7523).",
     "stderr_snippet": ""
+  },
+  {
+    "id": 19,
+    "timestamp": "2026-04-27T17:33:03.795049",
+    "params_or_code": "{\"experiment_name\": \"low_fmin_low_mels_search\", \"model_type\": \"efficientnet\", \"learning_rate\": 0.0003, \"batch_size\": 16, \"epochs\": 10, \"n_filters_1\": 0, \"n_filters_2\": 0, \"n_filters_3\": 0, \"dropout_rate\": 0.4, \"dense_units\": 256, \"n_mels\": 64, \"n_fft\": 2048, \"hop_length\": 512, \"fmin\": 20, \"fmax\": 14000, \"max_samples\": 3000, \"use_augmentation\": true, \"augmentation_type\": \"time_shift\", \"augmentation_noise\": 0.01, \"unfreeze_layers\": 0}",
+    "success": true,
+    "metrics": {
+      "experiment_name": "low_fmin_low_mels_search",
+      "model_type": "efficientnet",
+      "val_auc": 0.826,
+      "val_loss": 0.0444,
+      "train_auc": 0.7712,
+      "epochs_trained": 8,
+      "elapsed_seconds": 219.1,
+      "n_samples": 4478
+    },
+    "analysis": "The current setup successfully utilized the EfficientNet architecture, achieving a strong validation AUC of 0.826, confirming that pre-trained, state-of-the-art CNN features are highly effective for this task. The primary concern is the significant disparity, where the validation AUC (0.826) is higher than the training AUC (0.7712), which suggests potential dataset leakage or overly optimistic validation results. To improve robustness, reduce the dropout rate or introduce more aggressive L2 regularization to better manage the model's capacity. Continue utilizing EfficientNet over building a custom CNN backbone, as its adaptive scaling generally yields superior feature extraction and stability in complex audio classification tasks.",
+    "stderr_snippet": ""
+  },
+  {
+    "id": 20,
+    "timestamp": "2026-04-27T17:39:29.726226",
+    "params_or_code": "{\"experiment_name\": \"mels_64_low_noise\", \"model_type\": \"efficientnet\", \"learning_rate\": 0.0003, \"batch_size\": 16, \"epochs\": 10, \"n_filters_1\": 0, \"n_filters_2\": 0, \"n_filters_3\": 0, \"dropout_rate\": 0.4, \"dense_units\": 256, \"n_mels\": 64, \"n_fft\": 2048, \"hop_length\": 512, \"fmin\": 50, \"fmax\": 14000, \"max_samples\": 3000, \"use_augmentation\": true, \"augmentation_type\": \"time_shift\", \"augmentation_noise\": 0.002, \"unfreeze_layers\": 0}",
+    "success": true,
+    "metrics": {
+      "experiment_name": "mels_64_low_noise",
+      "model_type": "efficientnet",
+      "val_auc": 0.8211,
+      "val_loss": 0.0428,
+      "train_auc": 0.7815,
+      "epochs_trained": 10,
+      "elapsed_seconds": 249.3,
+      "n_samples": 4478
+    },
+    "analysis": "The EfficientNet backbone performed well, achieving a solid validation AUC of 0.8211, confirming its ability to extract complex features from the spectrograms, which generally outperforms basic CNNs by optimally scaling model dimensions. However, the measurable gap between the training AUC (0.7815) and validation AUC (0.8211) suggests a slight tendency toward overfitting. For the next iteration, maintain the EfficientNet architecture as it is robust, but increase regularization strength\u2014specifically try boosting the dropout rate or introducing weight decay\u2014to improve generalization. Finally, challenge the model further by experimenting with a combination of different audio augmentations (e.g., time shift plus pitch shift) to improve time-frequency invariance.",
+    "stderr_snippet": ""
+  },
+  {
+    "id": 21,
+    "timestamp": "2026-04-27T17:57:48.588885",
+    "params_or_code": "{\"experiment_name\": \"low_fmin_exploration\", \"model_type\": \"efficientnet\", \"learning_rate\": 0.0003, \"batch_size\": 16, \"epochs\": 10, \"n_filters_1\": 0, \"n_filters_2\": 0, \"n_filters_3\": 0, \"dropout_rate\": 0.4, \"dense_units\": 256, \"n_mels\": 128, \"n_fft\": 2048, \"hop_length\": 512, \"fmin\": 20, \"fmax\": 14000, \"max_samples\": 3000, \"use_augmentation\": true, \"augmentation_type\": \"time_shift\", \"augmentation_noise\": 0.01, \"unfreeze_layers\": 0}",
+    "success": true,
+    "metrics": {
+      "experiment_name": "low_fmin_exploration",
+      "model_type": "efficientnet",
+      "val_auc": 0.8198,
+      "val_loss": 0.0441,
+      "train_auc": 0.7755,
+      "epochs_trained": 10,
+      "elapsed_seconds": 966.9,
+      "n_samples": 4478
+    },
+    "analysis": "The experiment was successful, achieving a strong validation AUC of 0.8198, which is close to the reported best AUC of 0.826. The use of EfficientNet appears appropriate for this task, leveraging its hierarchical structure for robust feature extraction, particularly beneficial given the 'low_fmin_exploration' setting. While validation performance is good, the notable gap between the train AUC (0.7755) and val AUC (0.8198) suggests a potential domain shift or overfitting to the validation set. Next, investigate model robustness by systematically tuning the `dropout_rate` or introducing ensemble techniques, and consider fine-tuning the `fmin` boundary to better optimize the lower frequency band.",
+    "stderr_snippet": ""
+  },
+  {
+    "id": 22,
+    "timestamp": "2026-04-27T18:37:09.264424",
+    "params_or_code": "{\"experiment_name\": \"HighFreq_HighDim_Aug\", \"model_type\": \"efficientnet\", \"learning_rate\": 0.0003, \"batch_size\": 16, \"epochs\": 10, \"n_filters_1\": 0, \"n_filters_2\": 0, \"n_filters_3\": 0, \"dropout_rate\": 0.4, \"dense_units\": 256, \"n_mels\": 256, \"n_fft\": 2048, \"hop_length\": 512, \"fmin\": 50, \"fmax\": 16000, \"max_samples\": 3000, \"use_augmentation\": true, \"augmentation_type\": \"time_shift\", \"augmentation_noise\": 0.01, \"unfreeze_layers\": 0}",
+    "success": true,
+    "metrics": {
+      "experiment_name": "HighFreq_HighDim_Aug",
+      "model_type": "efficientnet",
+      "val_auc": 0.8171,
+      "val_loss": 0.0447,
+      "train_auc": 0.7769,
+      "epochs_trained": 10,
+      "elapsed_seconds": 1969.8,
+      "n_samples": 4478
+    },
+    "analysis": "The utilization of EfficientNet is appropriate for this spectrographic feature extraction task, as CNNs excel at capturing local patterns across time-frequency data. The high validation AUC of 0.8171 confirms that the combination of EfficientNet and time-shift augmentation is highly successful. However, the noticeable gap between the training (0.7769) and validation (0.8171) AUC suggests room for improving generalization, rather than pure model capacity. To address this, focus on regularization techniques such as increasing dropout or implementing more aggressive weight decay, which will prevent the model from over-relying on the training set details. Consider systematically varying the learning rate or employing a staged fine-tuning approach to further maximize performance.",
+    "stderr_snippet": ""
+  },
+  {
+    "id": 23,
+    "timestamp": "2026-04-27T19:13:36.088269",
+    "params_or_code": "{\"experiment_name\": \"high_mels_low_noise\", \"model_type\": \"efficientnet\", \"learning_rate\": 0.0003, \"batch_size\": 16, \"epochs\": 10, \"n_filters_1\": 0, \"n_filters_2\": 0, \"n_filters_3\": 0, \"dropout_rate\": 0.4, \"dense_units\": 256, \"n_mels\": 256, \"n_fft\": 2048, \"hop_length\": 512, \"fmin\": 50, \"fmax\": 14000, \"max_samples\": 3000, \"use_augmentation\": true, \"augmentation_type\": \"time_shift\", \"augmentation_noise\": 0.002, \"unfreeze_layers\": 0}",
+    "success": true,
+    "metrics": {
+      "experiment_name": "high_mels_low_noise",
+      "model_type": "efficientnet",
+      "val_auc": 0.8163,
+      "val_loss": 0.0467,
+      "train_auc": 0.7692,
+      "epochs_trained": 10,
+      "elapsed_seconds": 1913.3,
+      "n_samples": 4478
+    },
+    "analysis": "The high validation AUC (0.8163) suggests the chosen EfficientNet architecture is robust for this task, benefiting from the high number of Mels and targeted data augmentation. The modest gap between training and validation AUC indicates acceptable generalization, though the current performance leaves room for improvement. Next, focus hyperparameter tuning on the EfficientNet, particularly adjusting the learning rate or dropout rate, rather than reverting to a basic CNN, as the specialized convolutional structure is beneficial. Consider increasing the variability of the time_shift augmentation or incorporating frequency domain augmentations to further enhance model robustness against variations in recording quality.",
+    "stderr_snippet": ""
+  },
+  {
+    "id": 24,
+    "timestamp": "2026-04-27T19:45:20.493402",
+    "params_or_code": "{\"experiment_name\": \"high_mels_low_fmax_test\", \"model_type\": \"efficientnet\", \"learning_rate\": 0.0003, \"batch_size\": 16, \"epochs\": 10, \"n_filters_1\": 0, \"n_filters_2\": 0, \"n_filters_3\": 0, \"dropout_rate\": 0.4, \"dense_units\": 256, \"n_mels\": 256, \"n_fft\": 2048, \"hop_length\": 512, \"fmin\": 50, \"fmax\": 12000, \"max_samples\": 3000, \"use_augmentation\": true, \"augmentation_type\": \"time_shift\", \"augmentation_noise\": 0.01, \"unfreeze_layers\": 0}",
+    "success": true,
+    "metrics": {
+      "experiment_name": "high_mels_low_fmax_test",
+      "model_type": "efficientnet",
+      "val_auc": 0.8178,
+      "val_loss": 0.0476,
+      "train_auc": 0.769,
+      "epochs_trained": 10,
+      "elapsed_seconds": 1683.5,
+      "n_samples": 4478
+    },
+    "analysis": "The current setup, using EfficientNet, shows promising generalization (Val AUC of 0.8178) despite a notable gap between the training (0.769) and validation performance, suggesting potential overfitting. The choice of EfficientNet is generally effective for complex audio tasks like BirdCLEF, as its depth and efficiency can capture rich spectro-temporal features better than a standard CNN. While the high number of mel bands (256) and robust augmentation help, the performance lift from the current parameters is limited. To improve, consider fine-tuning the learning rate or experimenting with a deeper pre-trained encoder or transfer learning approach to reduce the generalization gap and further stabilize the model's capacity.",
+    "stderr_snippet": ""
+  },
+  {
+    "id": 25,
+    "timestamp": "2026-04-27T20:01:55.322954",
+    "params_or_code": "{\"experiment_name\": \"mel_mels_64_optimized\", \"model_type\": \"efficientnet\", \"learning_rate\": 0.0003, \"batch_size\": 16, \"epochs\": 10, \"n_filters_1\": 0, \"n_filters_2\": 0, \"n_filters_3\": 0, \"dropout_rate\": 0.4, \"dense_units\": 256, \"n_mels\": 64, \"n_fft\": 2048, \"hop_length\": 512, \"fmin\": 50, \"fmax\": 14000, \"max_samples\": 3000, \"use_augmentation\": true, \"augmentation_type\": \"time_shift\", \"augmentation_noise\": 0.01, \"unfreeze_layers\": 0}",
+    "success": true,
+    "metrics": {
+      "experiment_name": "mel_mels_64_optimized",
+      "model_type": "efficientnet",
+      "val_auc": 0.8193,
+      "val_loss": 0.0433,
+      "train_auc": 0.7788,
+      "epochs_trained": 9,
+      "elapsed_seconds": 702.4,
+      "n_samples": 4478
+    },
+    "analysis": "The deployment of EfficientNet was effective, yielding a strong validation AUC of 0.8193, suggesting that its hierarchical scaling and depth make it superior to a basic CNN backbone for this task. However, the gap between the training AUC (0.7788) and the validation AUC (0.8193) suggests the model is slightly overfit or could generalize better. To improve, prioritize adjusting regularization by either increasing the dropout rate or implementing data-level augmentation variations (e.g., pitch shifting). For future experiments, retaining the EfficientNet backbone is advised, but consider integrating attention mechanisms or employing a wider network architecture to help bridge the current performance gap and push the best AUC beyond the current 0.826 peak.",
+    "stderr_snippet": ""
+  },
+  {
+    "id": 26,
+    "timestamp": "2026-04-28T09:40:59.783090",
+    "params_or_code": "{\"experiment_name\": \"high_mel_high_fmax_v2\", \"model_type\": \"efficientnet\", \"learning_rate\": 0.0003, \"batch_size\": 16, \"epochs\": 10, \"n_filters_1\": 0, \"n_filters_2\": 0, \"n_filters_3\": 0, \"dropout_rate\": 0.4, \"dense_units\": 256, \"n_mels\": 256, \"n_fft\": 2048, \"hop_length\": 512, \"fmin\": 50, \"fmax\": 16000, \"max_samples\": 3000, \"use_augmentation\": true, \"augmentation_type\": \"time_shift\", \"augmentation_noise\": 0.005, \"unfreeze_layers\": 0}",
+    "success": false,
+    "metrics": null,
+    "analysis": "The primary failure point is the reported `Success: False` and lack of metrics, indicating a critical debugging need rather than a model flaw. Utilizing EfficientNet is appropriate as it provides superior feature extraction compared to traditional CNNs by scaling depth and width efficiently. Do not abandon the EfficientNet backbone; instead, adjust hyperparameters. Focus next on resolving the training failure by checking the learning rate or batch size, and perhaps simplifying the augmentation regimen initially to stabilize training before re-attempting the full pipeline.",
+    "stderr_snippet": "TIMEOUT: experiment exceeded 1800 seconds"
+  },
+  {
+    "id": 27,
+    "timestamp": "2026-04-28T09:56:46.209182",
+    "params_or_code": "{\"experiment_name\": \"HighMel_LowerAugNoise\", \"model_type\": \"efficientnet\", \"learning_rate\": 0.0003, \"batch_size\": 16, \"epochs\": 10, \"n_filters_1\": 0, \"n_filters_2\": 0, \"n_filters_3\": 0, \"dropout_rate\": 0.4, \"dense_units\": 256, \"n_mels\": 256, \"n_fft\": 2048, \"hop_length\": 512, \"fmin\": 50, \"fmax\": 14000, \"max_samples\": 3000, \"use_augmentation\": true, \"augmentation_type\": \"time_shift\", \"augmentation_noise\": 0.005, \"unfreeze_layers\": 0}",
+    "success": true,
+    "metrics": {
+      "experiment_name": "HighMel_LowerAugNoise",
+      "model_type": "efficientnet",
+      "val_auc": 0.8166,
+      "val_loss": 0.046,
+      "train_auc": 0.7677,
+      "epochs_trained": 8,
+      "elapsed_seconds": 826.2,
+      "n_samples": 4478
+    },
+    "analysis": "The EfficientNet model performed adequately, achieving a validation AUC of 0.8166, indicating the chosen architecture successfully captured complex temporal-spectral features. However, the notable gap between the high training AUC (0.7677) and the validation AUC suggests the model may struggle with generalization, despite using high dropout. To improve, focus on reducing this gap by implementing stricter regularization (e.g., L2 weight decay) or increasing the effective training time. EfficientNet is preferred over a basic CNN because its optimized structure (using compound scaling and depthwise separable convolutions) allows it to extract rich, hierarchical features from the spectrogram data with greater computational efficiency.",
+    "stderr_snippet": ""
+  },
+  {
+    "id": 28,
+    "timestamp": "2026-04-28T10:17:32.595316",
+    "params_or_code": "{\"experiment_name\": \"High_Mel_Low_Noise_Test\", \"model_type\": \"efficientnet\", \"learning_rate\": 0.0003, \"batch_size\": 16, \"epochs\": 10, \"n_filters_1\": 0, \"n_filters_2\": 0, \"n_filters_3\": 0, \"dropout_rate\": 0.4, \"dense_units\": 256, \"n_mels\": 256, \"n_fft\": 2048, \"hop_length\": 512, \"fmin\": 50, \"fmax\": 14000, \"max_samples\": 3000, \"use_augmentation\": true, \"augmentation_type\": \"time_shift\", \"augmentation_noise\": 0.005, \"unfreeze_layers\": 0}",
+    "success": true,
+    "metrics": {
+      "experiment_name": "High_Mel_Low_Noise_Test",
+      "model_type": "efficientnet",
+      "val_auc": 0.8175,
+      "val_loss": 0.0448,
+      "train_auc": 0.7623,
+      "epochs_trained": 8,
+      "elapsed_seconds": 1062.4,
+      "n_samples": 4478
+    },
+    "analysis": "The use of EfficientNet, a highly optimized convolutional network structure, is effective for capturing spectral and temporal patterns in the Mel spectrogram, proving superior to a standard CNN architecture. The validation AUC of 0.8175 indicates solid generalizability, though the gap between train (0.7623) and validation AUC suggests minor overfitting. To improve robustness, slightly reduce the high dropout rate (0.4) to allow the model to better utilize learned features, and experiment with different augmentation forms, such as varying noise levels or adding spectral masking, to enhance generalization.",
+    "stderr_snippet": ""
   }
 ]

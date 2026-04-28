@@ -27,59 +27,59 @@ You must respond with ONLY a valid JSON object. No text, no explanation, no mark
 The JSON must have ALL of these keys:
 {
     "experiment_name": "short_descriptive_name",
-    "model_type": "cnn",
-    "learning_rate": 0.001,
-    "batch_size": 32,
-    "epochs": 5,
-    "n_filters_1": 32,
-    "n_filters_2": 64,
-    "n_filters_3": 128,
-    "dropout_rate": 0.3,
+    "model_type": "efficientnet",
+    "learning_rate": 0.0003,
+    "batch_size": 16,
+    "epochs": 10,
+    "n_filters_1": 0,
+    "n_filters_2": 0,
+    "n_filters_3": 0,
+    "dropout_rate": 0.4,
     "dense_units": 256,
-    "n_mels": 128,
+    "n_mels": 64,
     "n_fft": 2048,
     "hop_length": 512,
-    "fmin": 50,
+    "fmin": 20,
     "fmax": 14000,
-    "max_samples": 2000,
-    "use_augmentation": false,
-    "augmentation_type": "noise",
+    "top_db": 80.0,
+    "max_samples": 3000,
+    "use_augmentation": true,
+    "augmentation_type": "time_shift",
     "augmentation_noise": 0.01,
     "unfreeze_layers": 0
 }
 
-ARCHITECTURE CHOICE (most important decision):
-- model_type "cnn": custom 3-block CNN. Good for fast exploration. Filters matter.
-- model_type "efficientnet": EfficientNetB0 pretrained on ImageNet. MUCH stronger features.
-  When using efficientnet: n_filters are ignored, set lower learning_rate (0.0001-0.001),
-  unfreeze_layers=0 for frozen backbone, or 10-20 for fine-tuning last layers.
+WHAT WE ALREADY KNOW — DO NOT CHANGE THESE:
+- model_type: ALWAYS "efficientnet"
+- max_samples: ALWAYS 3000
+- batch_size: ALWAYS 16
+- learning_rate: ALWAYS 0.0003
+- dropout_rate: ALWAYS 0.4
+- dense_units: ALWAYS 256
+- unfreeze_layers: ALWAYS 0
+- use_augmentation: ALWAYS true
+- augmentation_type: ALWAYS "time_shift"
+- n_mels: ALWAYS 64 — best found so far
+- fmin: ALWAYS 20 — best found so far
 
-PARAMETER RANGES:
-- model_type: "cnn" or "efficientnet"
-- learning_rate: 0.0001 to 0.01 (use lower for efficientnet: 0.0001-0.0005)
-- batch_size: 16, 32, or 64
-- epochs: 3 to 15
-- dropout_rate: 0.1 to 0.5
-- dense_units: 64 to 512
-- max_samples: 2000 to 5000
-- use_augmentation: true or false
-- augmentation_type: "noise", "time_shift", "freq_mask","specaugment", or "all"
-- unfreeze_layers: 0 (frozen) to 20 (fine-tune last 20 layers). Only for efficientnet.
+BEST CONFIG SO FAR: val_auc=0.826
+n_mels=64, fmin=20, fmax=14000, n_fft=2048, hop_length=512, top_db=80, noise=0.01
+
+WHAT TO EXPLORE — vary ONLY these parameters one or two at a time:
+- hop_length: try 160, 256, 320, 512
+- n_fft: try 512, 1024, 2048, 4096
+- fmax: try 10000, 12000, 14000, 16000
+- top_db: try 60.0, 80.0, 100.0
+- augmentation_noise: try 0.002, 0.005, 0.01, 0.02
+- epochs: try 12, 15 if models converge too fast
 
 STRATEGY:
-- Do NOT repeat the same configuration family more than twice in a row.
-- If the last 3 experiments did not improve best AUC, force exploration of a meaningfully different configuration.
-- Vary at least one of these strongly across experiments: batch_size, dropout_rate, max_samples, augmentation_type, unfreeze_layers.
-- Do not always use augmentation_type "all". Also test "noise", "time_shift", and "freq_mask".
-- If efficientnet has failed repeatedly, try a CNN experiment before returning to efficientnet.
-- Explore dropout_rate values such as 0.2, 0.4, and 0.5, not only 0.3.
-- Explore batch_size values 16 and 64, not only 32.
-- Explore max_samples values 2500 and 3000 when previous runs are stable.
-- When using efficientnet with unfreeze_layers > 0, keep learning_rate very low (0.0001 to 0.0002).
-- Change 1-3 parameters per experiment, but avoid near-duplicate experiments.
+- Change only 1-2 parameters per experiment
+- Never repeat the same combination
+- Focus especially on hop_length and top_db — not yet explored
+- Goal: beat val_auc=0.826
 
 Respond with ONLY the JSON."""
-
 
 def build_prompt(memory_summary):
     return f"""{SYSTEM_PROMPT}

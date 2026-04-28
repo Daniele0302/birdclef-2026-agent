@@ -33,10 +33,11 @@ def load_params(config_path=None):
         "dropout_rate": 0.3,
         "dense_units": 256,
         "n_mels": 128,
-        "n_fft": 2048,
-        "hop_length": 512,
-        "fmin": 50,
-        "fmax": 14000,
+        "n_fft": 1024,
+        "top_db": 80.0,
+        "hop_length": 320,
+        "fmin": 20,
+        "fmax": 16000,
         "max_samples": 2000,
         "use_augmentation": False,
         "augmentation_type": "noise",
@@ -58,6 +59,8 @@ def load_params(config_path=None):
 # =============================================================
 def make_melspec(y, sr, params):
     import librosa
+    top_db = params.get("top_db", 80.0)
+    
     mel = librosa.feature.melspectrogram(
         y=y, sr=sr,
         n_mels=params["n_mels"],
@@ -66,11 +69,17 @@ def make_melspec(y, sr, params):
         fmin=params["fmin"],
         fmax=params["fmax"]
     )
-    mel_db = librosa.power_to_db(mel, ref=np.max)
-    mel_min, mel_max = mel_db.min(), mel_db.max()
-    if mel_max - mel_min == 0:
-        return np.zeros_like(mel_db)
-    return (mel_db - mel_min) / (mel_max - mel_min)
+    
+    # Normalizzazione top_db (più stabile di min-max per clip brevi)
+    # Identica al notebook LB0.872
+    mel_db = librosa.power_to_db(mel, ref=np.max, top_db=top_db)
+    
+    # Porta i valori tra 0 e 1 usando top_db come range fisso
+    # -top_db -> 0,  0dB -> 1
+    mel_norm = (mel_db + top_db) / top_db
+    mel_norm = np.clip(mel_norm, 0.0, 1.0)
+    
+    return mel_norm
 
 
 def load_and_process(filepath, sr=32000, duration=5, params=None):
