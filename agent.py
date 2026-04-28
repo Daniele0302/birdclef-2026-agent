@@ -42,6 +42,8 @@ The JSON must have ALL of these keys:
     "fmin": 20,
     "fmax": 14000,
     "top_db": 80.0,
+    "mel_norm": null,
+    "mel_scale": "htk",
     "max_samples": 3000,
     "use_augmentation": true,
     "augmentation_type": "time_shift",
@@ -72,6 +74,9 @@ WHAT TO EXPLORE — vary ONLY these parameters one or two at a time:
 - top_db: try 60.0, 80.0, 100.0
 - augmentation_noise: try 0.002, 0.005, 0.01, 0.02
 - epochs: try 12, 15 if models converge too fast
+- mel_norm: try null, "slaney"
+- mel_scale: try "htk", "slaney"
+
 
 STRATEGY:
 - Change only 1-2 parameters per experiment

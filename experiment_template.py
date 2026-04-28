@@ -39,6 +39,9 @@ def load_params(config_path=None):
         "fmin": 20,
         "fmax": 16000,
         "max_samples": 2000,
+        "mel_norm": None,        # None o "slaney"
+        "mel_scale": "htk",      # "htk" o "slaney"
+        "fmin": 0,               # 0 cattura tutte le frequenze
         "use_augmentation": False,
         "augmentation_type": "noise",
         "augmentation_noise": 0.01,
@@ -67,20 +70,25 @@ def make_melspec(y, sr, params):
         n_fft=params["n_fft"],
         hop_length=params["hop_length"],
         fmin=params["fmin"],
-        fmax=params["fmax"]
+        fmax=params["fmax"],
+        norm=params.get("mel_norm", None),      # "slaney" o None
+        mel_scale=params.get("mel_scale", "htk") # "htk" o "slaney"
     )
     
-    # Normalizzazione top_db (più stabile di min-max per clip brevi)
-    # Identica al notebook LB0.872
+    # Gestione NaN/Inf prima della conversione dB
+    mel = np.nan_to_num(mel, nan=0.0, posinf=0.0, neginf=0.0)
+    
+    # Normalizzazione top_db (stabile per clip brevi)
     mel_db = librosa.power_to_db(mel, ref=np.max, top_db=top_db)
     
+    # Gestione NaN/Inf dopo la conversione dB
+    mel_db = np.nan_to_num(mel_db, nan=-top_db, posinf=0.0, neginf=-top_db)
+    
     # Porta i valori tra 0 e 1 usando top_db come range fisso
-    # -top_db -> 0,  0dB -> 1
     mel_norm = (mel_db + top_db) / top_db
     mel_norm = np.clip(mel_norm, 0.0, 1.0)
     
     return mel_norm
-
 
 def load_and_process(filepath, sr=32000, duration=5, params=None):
     import librosa
@@ -456,9 +464,53 @@ def run_experiment(params):
         print(f"Dataset: {X.shape[0]} samples, shape={X.shape[1:]}")
 
     # --- Split ---
-    X_train, X_val, y_train, y_val = train_test_split(
-        X, y, test_size=0.2, random_state=42
-    )
+    # Split stratificato per specie primaria
+    # Garantisce che ogni specie sia rappresentata nel validation set
+    from sklearn.model_selection import train_test_split
+
+    # Trova la specie primaria di ogni sample (indice della colonna con valore 1)
+    primary_labels = np.argmax(y, axis=1)
+
+    # Conta quante volte appare ogni classe
+    from collections import Counter
+    class_counts = Counter(primary_labels)
+
+    # Le classi con meno di 2 samples non possono essere stratificate
+    # Le mettiamo direttamente nel training
+    rare_mask = np.array([class_counts[p] < 2 for p in primary_labels])
+    common_mask = ~rare_mask
+
+    if common_mask.sum() > 10:
+        X_common = X[common_mask]
+        y_common = y[common_mask]
+        labels_common = primary_labels[common_mask]
+    
+        X_rare = X[rare_mask]
+        y_rare = y[rare_mask]
+    
+        X_train_c, X_val, y_train_c, y_val = train_test_split(
+            X_common, y_common,
+            test_size=0.2,
+            random_state=42,
+            stratify=labels_common
+        )
+    
+        # Aggiungi i samples rari al training
+        if len(X_rare) > 0:
+            X_train = np.concatenate([X_train_c, X_rare], axis=0)
+            y_train = np.concatenate([y_train_c, y_rare], axis=0)
+        else:
+            X_train = X_train_c
+            y_train = y_train_c
+    
+        print(f"Stratified split: {X_train.shape[0]} train, {X_val.shape[0]} val")
+        print(f"Rare samples added to training: {len(X_rare)}")
+    else:
+        # Fallback a split casuale
+        X_train, X_val, y_train, y_val = train_test_split(
+            X, y, test_size=0.2, random_state=42
+        )
+        print(f"Random split: {X_train.shape[0]} train, {X_val.shape[0]} val")
 
     # --- Augmentation ---
     X_train = augment_batch(X_train, params)
