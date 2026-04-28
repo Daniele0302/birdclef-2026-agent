@@ -64,6 +64,9 @@ def make_melspec(y, sr, params):
     import librosa
     top_db = params.get("top_db", 80.0)
     
+    # mel_scale: "htk" usa htk=True, qualsiasi altro valore usa htk=False
+    use_htk = params.get("mel_scale", "htk") == "htk"
+    
     mel = librosa.feature.melspectrogram(
         y=y, sr=sr,
         n_mels=params["n_mels"],
@@ -71,20 +74,13 @@ def make_melspec(y, sr, params):
         hop_length=params["hop_length"],
         fmin=params["fmin"],
         fmax=params["fmax"],
-        norm=params.get("mel_norm", None),      # "slaney" o None
-        mel_scale=params.get("mel_scale", "htk") # "htk" o "slaney"
+        norm=params.get("mel_norm", None),
+        htk=use_htk
     )
     
-    # Gestione NaN/Inf prima della conversione dB
     mel = np.nan_to_num(mel, nan=0.0, posinf=0.0, neginf=0.0)
-    
-    # Normalizzazione top_db (stabile per clip brevi)
     mel_db = librosa.power_to_db(mel, ref=np.max, top_db=top_db)
-    
-    # Gestione NaN/Inf dopo la conversione dB
     mel_db = np.nan_to_num(mel_db, nan=-top_db, posinf=0.0, neginf=-top_db)
-    
-    # Porta i valori tra 0 e 1 usando top_db come range fisso
     mel_norm = (mel_db + top_db) / top_db
     mel_norm = np.clip(mel_norm, 0.0, 1.0)
     
