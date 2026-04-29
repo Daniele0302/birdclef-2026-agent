@@ -1,5 +1,5 @@
 {
-  "experiment_name": "mels_64_low_noise",
+  "experiment_name": "H_160_vs_Best",
   "model_type": "efficientnet",
   "learning_rate": 0.0003,
   "batch_size": 16,
@@ -11,12 +11,15 @@
   "dense_units": 256,
   "n_mels": 64,
   "n_fft": 2048,
-  "hop_length": 512,
-  "fmin": 50,
+  "hop_length": 160,
+  "fmin": 20,
   "fmax": 14000,
+  "top_db": 60.0,
+  "mel_norm": null,
+  "mel_scale": "htk",
   "max_samples": 3000,
   "use_augmentation": true,
   "augmentation_type": "time_shift",
-  "augmentation_noise": 0.002,
+  "augmentation_noise": 0.01,
   "unfreeze_layers": 0
 }
