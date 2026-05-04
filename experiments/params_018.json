@@ -1,0 +1,18 @@
+{
+  "experiment_name": "mel_norm_null_top_db_40",
+  "model_type": "efficientnet",
+  "learning_rate": 0.0003,
+  "batch_size": 16,
+  "epochs": 8,
+  "n_filters_1": 0,
+  "n_filters_2": 0,
+  "n_filters_3": 0,
+  "dropout_rate": 0.4,
+  "dense_units": 256,
+  "n_mels": 64,
+  "n_fft": 2048,
+  "hop_length": 256,
+  "fmin": 20,
+  "fmax": 14000,
+  "mel_norm": "null"
+}

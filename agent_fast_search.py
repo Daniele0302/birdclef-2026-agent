@@ -80,7 +80,10 @@ STRATEGY:
 - Never repeat the same combination
 - Goal: find preprocessing that generalizes to real soundscapes
 
-Respond with ONLY the JSON."""EXPERIMENTS_DIR = "experiments"
+Respond with ONLY the JSON.""" 
+
+
+EXPERIMENTS_DIR = "experiments"
 
 os.makedirs(EXPERIMENTS_DIR, exist_ok=True)
 

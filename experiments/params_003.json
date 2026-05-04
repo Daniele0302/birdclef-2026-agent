@@ -1,9 +1,9 @@
 {
-  "experiment_name": "slaney_norm_hop256_top60",
+  "experiment_name": "fmax_10k_mel_norm_null",
   "model_type": "efficientnet",
   "learning_rate": 0.0003,
   "batch_size": 16,
-  "epochs": 10,
+  "epochs": 8,
   "n_filters_1": 0,
   "n_filters_2": 0,
   "n_filters_3": 0,
@@ -13,12 +13,13 @@
   "n_fft": 2048,
   "hop_length": 256,
   "fmin": 20,
-  "fmax": 14000,
-  "top_db": 60.0,
-  "mel_norm": "slaney",
+  "fmax": 10000,
+  "top_db": 50.0,
+  "mel_norm": "null",
   "mel_scale": "htk",
-  "max_samples": 3000,
+  "max_samples": 2000,
   "use_augmentation": true,
   "augmentation_type": "time_shift",
-  "augmentation_strength": 0.1
+  "augmentation_noise": 0.01,
+  "unfreeze_layers": 0
 }

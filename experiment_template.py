@@ -66,6 +66,11 @@ def make_melspec(y, sr, params):
     # mel_scale: "htk" usa htk=True, qualsiasi altro valore usa htk=False
     use_htk = params.get("mel_scale", "htk") == "htk"
     
+    # Fix: Gemma sometimes sends "null" as string instead of None
+    mel_norm_val = params.get("mel_norm", None)
+    if mel_norm_val == "null":
+        mel_norm_val = None
+
     mel = librosa.feature.melspectrogram(
         y=y, sr=sr,
         n_mels=params["n_mels"],
@@ -73,7 +78,7 @@ def make_melspec(y, sr, params):
         hop_length=params["hop_length"],
         fmin=params["fmin"],
         fmax=params["fmax"],
-        norm=params.get("mel_norm", None),
+        norm=mel_norm_val,
         htk=use_htk
     )
     
@@ -474,7 +479,7 @@ def run_experiment(params):
     y_val = y[val_indices]
 
     print(f"Fixed split: {len(X_train)} train, {len(X_val)} val")
-    
+
     # --- Augmentation ---
     X_train = augment_batch(X_train, params)
 

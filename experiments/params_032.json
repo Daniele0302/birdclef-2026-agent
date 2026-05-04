@@ -1,0 +1,20 @@
+{
+  "experiment_name": "MelNorm_Null_Noise_0.005_Check",
+  "model_type": "efficientnet",
+  "learning_rate": 0.0003,
+  "batch_size": 16,
+  "epochs": 8,
+  "n_filters_1": 0,
+  "n_filters_2": 0,
+  "n_filters_3": 0,
+  "dropout_rate": 0.1,
+  "dense_units": 256,
+  "n_mels": 64,
+  "n_features": 1,
+  "max_channels": 1,
+  "augmentation": "TimeMask",
+  "input_shape": "1x1x1",
+  "optimizer": "Adam",
+  "initial_learning_rate": 0.001,
+  "scheduler_type": "CosineAnnealing"
+}
