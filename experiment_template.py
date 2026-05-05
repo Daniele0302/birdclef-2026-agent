@@ -189,6 +189,33 @@ def augment_batch(X, params):
                 spec[:, t_start:t_start + t_width] = 0
 
             X_aug[i] = spec
+    elif aug_type == "background_noise":
+        import librosa
+        import glob
+        soundscapes_dir = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "data", "train_soundscapes"
+        )
+        noise_files = glob.glob(os.path.join(soundscapes_dir, "*.ogg"))
+        if noise_files:
+            alpha = params.get("augmentation_noise", 0.1)
+            sr = 32000
+            samples_per_window = sr * 5
+            for i in range(len(X_aug)):
+                try:
+                    noise_file = noise_files[np.random.randint(len(noise_files))]
+                    y_noise, _ = librosa.load(
+                        noise_file, sr=sr, mono=True,
+                        offset=np.random.uniform(0, 30),
+                        duration=5.0
+                    )
+                    if len(y_noise) < samples_per_window:
+                        y_noise = np.pad(y_noise, (0, samples_per_window - len(y_noise)))
+                    noise_mel = make_melspec(y_noise, sr, params)
+                    noise_rgb = np.stack([noise_mel, noise_mel, noise_mel], axis=-1)
+                    X_aug[i] = X_aug[i] + alpha * noise_rgb
+                except Exception:
+                    continue
 
     return np.clip(X_aug, 0, 1)
 # =============================================================
