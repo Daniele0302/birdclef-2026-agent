@@ -10,6 +10,7 @@ What's new v3:
 import json
 import os
 import subprocess
+import sys
 import time
 from llm_provider import call_llm
 from memory import ExperimentMemory
@@ -117,7 +118,7 @@ def run_experiment_from_params(params, config_path):
 
     try:
         result = subprocess.run(
-            ['python3', 'experiment_template.py', '--config', config_path],
+            [sys.executable, 'experiment_template.py', '--config', config_path],
             capture_output=True,
             text=True,
             timeout=1800  # 30 min per EfficientNet con fine-tuning a due fasi
@@ -231,7 +232,12 @@ Focus on whether to use CNN or EfficientNet and why."""
     print(f"\n{'='*60}")
     print(f"AGENT COMPLETED — {N_ITERATIONS} experiments")
     print(f"Best AUC: {memory.best_auc}")
-    print(f"{'='*60}")
+    print(f"{'='*60}\n")
+
+    # Per-stage reliability report (this run + all previous runs in the log).
+    # The professor specifically asked for these metrics: how reliably does the
+    # agent move through Load -> Generate -> Run -> Execute -> Validate?
+    memory.print_reliability_report()
 
 
 if __name__ == "__main__":

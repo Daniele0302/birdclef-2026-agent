@@ -1,0 +1,31 @@
+{
+  "n_total": 108,
+  "stages": {
+    "S1_llm_response": {
+      "count": 108,
+      "rate": 1.0
+    },
+    "S2_valid_json": {
+      "count": 106,
+      "rate": 0.9814814814814815
+    },
+    "S3_subprocess_started": {
+      "count": 106,
+      "rate": 0.9814814814814815
+    },
+    "S4_training_completed": {
+      "count": 81,
+      "rate": 0.75
+    },
+    "S5_metrics_recovered": {
+      "count": 81,
+      "rate": 0.75
+    }
+  },
+  "conditional_rates": {
+    "P_S2_given_S1": 0.9814814814814815,
+    "P_S3_given_S2": 1.0,
+    "P_S4_given_S3": 0.7641509433962265,
+    "P_S5_given_S4": 1.0
+  }
+}

@@ -342,7 +342,7 @@ def build_model(input_shape, n_classes, params):
 # =============================================================
 def run_experiment(params):
     import pandas as pd
-    from sklearn.model_selection import train_test_split
+    from sklearn.metrics import roc_auc_score
     import tensorflow as tf
     from tensorflow import keras
     import ast
@@ -378,6 +378,8 @@ def run_experiment(params):
     print(f"\nLoading {len(train_df)} train_audio clips...")
     spectrograms = []
     labels = []
+    soundscape_val_spectrograms = []
+    soundscape_val_labels = []
 
     for idx, (_, row) in enumerate(train_df.iterrows()):
         if idx % 200 == 0:
@@ -420,8 +422,24 @@ def run_experiment(params):
         # Use max_samples/4 soundscape windows to keep balance
         max_sc = min(len(sc_df), params["max_samples"])
         sc_df = sc_df.sample(n=max_sc, random_state=42)
+        unique_sc_files = sorted(sc_df['filename'].unique().tolist())
+        if len(unique_sc_files) > 1:
+            rng = np.random.RandomState(42)
+            n_val_files = max(1, int(len(unique_sc_files) * 0.2))
+            val_sc_files = set(rng.choice(
+                unique_sc_files, size=n_val_files, replace=False
+            ))
+        else:
+            val_sc_files = set()
+        print(
+            f"  Soundscape group split: "
+            f"{len(unique_sc_files) - len(val_sc_files)} train files, "
+            f"{len(val_sc_files)} val files"
+        )
 
         sc_loaded = 0
+        sc_train_loaded = 0
+        sc_val_loaded = 0
         for idx, (_, row) in enumerate(sc_df.iterrows()):
             if idx % 200 == 0:
                 print(f"  soundscapes: {idx}/{len(sc_df)}")
@@ -467,11 +485,20 @@ def run_experiment(params):
                 if lbl in label_to_idx:
                     label_vec[label_to_idx[lbl]] = 1.0
 
-            spectrograms.append(mel)
-            labels.append(label_vec)
+            if row['filename'] in val_sc_files:
+                soundscape_val_spectrograms.append(mel)
+                soundscape_val_labels.append(label_vec)
+                sc_val_loaded += 1
+            else:
+                spectrograms.append(mel)
+                labels.append(label_vec)
+                sc_train_loaded += 1
             sc_loaded += 1
 
-        print(f"  Loaded {sc_loaded} windows from train_soundscapes")
+        print(
+            f"  Loaded {sc_loaded} windows from train_soundscapes "
+            f"({sc_train_loaded} train, {sc_val_loaded} soundscape-val)"
+        )
     else:
         print("  train_soundscapes not found, using only train_audio")
 
@@ -484,10 +511,27 @@ def run_experiment(params):
         # EfficientNet expects 3 channels (RGB)
         # We replicate the mel-spectrogram 3 times
         X = np.stack([X, X, X], axis=-1)
+        if soundscape_val_spectrograms:
+            X_soundscape_val = np.array(soundscape_val_spectrograms)
+            X_soundscape_val = np.stack(
+                [X_soundscape_val, X_soundscape_val, X_soundscape_val],
+                axis=-1
+            )
+            y_soundscape_val = np.array(soundscape_val_labels)
+        else:
+            X_soundscape_val = None
+            y_soundscape_val = None
         print(f"Dataset: {X.shape[0]} samples, shape={X.shape[1:]} (3 channels for EfficientNet)")
     else:
         # Custom CNN expects 1 channel
         X = np.expand_dims(X, axis=-1)
+        if soundscape_val_spectrograms:
+            X_soundscape_val = np.array(soundscape_val_spectrograms)
+            X_soundscape_val = np.expand_dims(X_soundscape_val, axis=-1)
+            y_soundscape_val = np.array(soundscape_val_labels)
+        else:
+            X_soundscape_val = None
+            y_soundscape_val = None
         print(f"Dataset: {X.shape[0]} samples, shape={X.shape[1:]}")
 
     # --- Split FISSO ---
@@ -515,17 +559,62 @@ def run_experiment(params):
     model, base_model = build_model(input_shape, n_classes, params)
     model.summary()
 
-    # --- Callbacks ---
-    callbacks = [
-        keras.callbacks.EarlyStopping(
-            monitor='val_auc', patience=3,
-            restore_best_weights=True, mode='max'
-        ),
-        keras.callbacks.ReduceLROnPlateau(
-            monitor='val_auc', factor=0.5,
-            patience=2, mode='max'
-        )
-    ]
+    # --- Callback: select checkpoints on held-out soundscape validation ---
+    class SoundscapeAucCheckpoint(keras.callbacks.Callback):
+        def __init__(self, X_soundscape, y_soundscape, batch_size, filepath):
+            super().__init__()
+            self.X_soundscape = X_soundscape
+            self.y_soundscape = y_soundscape
+            self.batch_size = batch_size
+            self.filepath = filepath
+            self.best_auc = -np.inf
+            self.best_epoch = None
+            self.last_auc = None
+            self.epochs_seen = 0
+
+        def on_epoch_end(self, epoch, logs=None):
+            logs = logs or {}
+            self.epochs_seen += 1
+            if self.X_soundscape is None or len(self.X_soundscape) == 0:
+                return
+
+            y_pred = self.model.predict(
+                self.X_soundscape,
+                batch_size=self.batch_size,
+                verbose=0
+            )
+            try:
+                auc = roc_auc_score(
+                    self.y_soundscape.ravel(),
+                    y_pred.ravel()
+                )
+            except ValueError as e:
+                print(f"\n  soundscape_val_auc unavailable: {e}")
+                return
+
+            self.last_auc = float(auc)
+            logs["soundscape_val_auc"] = self.last_auc
+            print(
+                f"\n  soundscape_val_auc={self.last_auc:.4f} "
+                f"(epoch {self.epochs_seen})"
+            )
+
+            if self.last_auc > self.best_auc:
+                self.best_auc = self.last_auc
+                self.best_epoch = self.epochs_seen
+                self.model.save(self.filepath)
+                print(
+                    f"  New best soundscape_val_auc={self.best_auc:.4f}; "
+                    f"saved {self.filepath}"
+                )
+
+    soundscape_checkpoint = SoundscapeAucCheckpoint(
+        X_soundscape_val,
+        y_soundscape_val,
+        params["batch_size"],
+        "best_model.keras"
+    )
+    callbacks = [soundscape_checkpoint]
 
     # --- Phase 1 Training: classifier only (base frozen) ---
     unfreeze = params.get("unfreeze_layers", 0)
@@ -578,6 +667,10 @@ def run_experiment(params):
         history.history['val_loss'] += history2.history.get('val_loss', [])
         history.history['auc'] += history2.history.get('auc', [])
         history.history['loss'] += history2.history.get('loss', [])
+        history.history.setdefault('soundscape_val_auc', [])
+        history.history['soundscape_val_auc'] += history2.history.get(
+            'soundscape_val_auc', []
+        )
 
     # --- Results ---
     elapsed = time.time() - start_time
@@ -585,8 +678,16 @@ def run_experiment(params):
     val_loss = float(min(history.history.get('val_loss', [999])))
     train_auc = float(max(history.history.get('auc', [0])))
     epochs_done = len(history.history['loss'])
+    soundscape_val_auc = soundscape_checkpoint.last_auc
+    best_soundscape_val_auc = (
+        soundscape_checkpoint.best_auc
+        if np.isfinite(soundscape_checkpoint.best_auc) else None
+    )
+    best_soundscape_epoch = soundscape_checkpoint.best_epoch
 
-    model.save('best_model.keras')
+    if best_soundscape_val_auc is None:
+        print("\n--- No held-out soundscape checkpoint was saved; saving final model ---")
+        model.save('best_model.keras')
 
     metrics = {
         "experiment_name": params["experiment_name"],
@@ -594,6 +695,15 @@ def run_experiment(params):
         "val_auc": round(val_auc, 4),
         "val_loss": round(val_loss, 4),
         "train_auc": round(train_auc, 4),
+        "soundscape_val_auc": (
+            round(soundscape_val_auc, 4)
+            if soundscape_val_auc is not None else None
+        ),
+        "best_soundscape_val_auc": (
+            round(best_soundscape_val_auc, 4)
+            if best_soundscape_val_auc is not None else None
+        ),
+        "best_soundscape_epoch": best_soundscape_epoch,
         "epochs_trained": epochs_done,
         "elapsed_seconds": round(elapsed, 1),
         "n_samples": X.shape[0]

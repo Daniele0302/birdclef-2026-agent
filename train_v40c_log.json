@@ -1,0 +1,45 @@
+{
+  "best_macro_auc": 0.572110671893646,
+  "history": [
+    {
+      "phase": "P1",
+      "epoch": 1,
+      "soundscape_macro_auc": 0.5170545308292888
+    },
+    {
+      "phase": "P1",
+      "epoch": 2,
+      "soundscape_macro_auc": 0.5523036719121966
+    },
+    {
+      "phase": "P1",
+      "epoch": 3,
+      "soundscape_macro_auc": 0.552003272212074
+    },
+    {
+      "phase": "P2",
+      "epoch": 1,
+      "soundscape_macro_auc": 0.551941577803258
+    },
+    {
+      "phase": "P2",
+      "epoch": 2,
+      "soundscape_macro_auc": 0.5408241335391495
+    },
+    {
+      "phase": "P2",
+      "epoch": 3,
+      "soundscape_macro_auc": 0.572110671893646
+    },
+    {
+      "phase": "P2",
+      "epoch": 4,
+      "soundscape_macro_auc": 0.5323827084804296
+    },
+    {
+      "phase": "P2",
+      "epoch": 5,
+      "soundscape_macro_auc": 0.5377994658035307
+    }
+  ]
+}

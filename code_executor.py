@@ -1,4 +1,5 @@
 import subprocess
+import sys
 import tempfile
 import os
 from typing import Dict, Any
@@ -7,6 +8,11 @@ from typing import Dict, Any
 def execute_code(code: str, timeout: int = 300) -> Dict[str, Any]:
     """
     Executes Python code in a temporary file and returns stdout/stderr.
+
+    Uses sys.executable so the subprocess inherits the same Python interpreter
+    (and therefore the same virtualenv / installed packages) that is running
+    the agent. Otherwise on macOS / Linux 'python3' resolves to the system
+    interpreter where tensorflow may not be installed.
     """
     temp_path = None
 
@@ -16,7 +22,7 @@ def execute_code(code: str, timeout: int = 300) -> Dict[str, Any]:
             temp_path = f.name
 
         result = subprocess.run(
-            ["python3", temp_path],
+            [sys.executable, temp_path],
             capture_output=True,
             text=True,
             timeout=timeout,

@@ -144,3 +144,96 @@ class ExperimentMemory:
         summary += f"\n\nCurrent best: val_auc={self.best_auc} (Experiment #{self.best_experiment_id})"
 
         return summary
+
+    def reliability_stats(self):
+        """
+        Per-stage success-rate analysis over all logged experiments.
+
+        Stages of the agent pipeline:
+          S1  LLM produced text         -- by construction always 1.0
+          S2  valid JSON parsed         -- params_or_code parses to a non-empty dict
+          S3  subprocess started        -- 'success' field is present (run was launched)
+          S4  training completed        -- success == True (no crash, no timeout)
+          S5  metrics recovered         -- val_auc present in metrics
+
+        Returns a dict with cumulative counts/rates and stage-conditional rates
+        (P(stage k | stage k-1)). The conditional rates make the weak link in
+        the pipeline immediately visible.
+        """
+        n_total = len(self.experiments)
+        if n_total == 0:
+            return {"n_total": 0}
+
+        n_valid_json = 0
+        n_subprocess = 0
+        n_completed = 0
+        n_metrics = 0
+
+        for e in self.experiments:
+            raw = e.get("params_or_code", "")
+            try:
+                parsed = json.loads(raw) if isinstance(raw, str) else raw
+                ok_json = isinstance(parsed, dict) and len(parsed) > 0
+            except Exception:
+                ok_json = False
+            if not ok_json:
+                continue
+            n_valid_json += 1
+
+            if "success" not in e:
+                continue
+            n_subprocess += 1
+
+            if e.get("success", False) is not True:
+                continue
+            n_completed += 1
+
+            m = e.get("metrics")
+            if isinstance(m, dict) and m.get("val_auc") is not None:
+                n_metrics += 1
+
+        def _ratio(num, den):
+            return num / den if den > 0 else 0.0
+
+        return {
+            "n_total": n_total,
+            "cumulative": {
+                "S1_llm_response":       {"count": n_total, "rate": 1.0},
+                "S2_valid_json":         {"count": n_valid_json, "rate": _ratio(n_valid_json, n_total)},
+                "S3_subprocess_started": {"count": n_subprocess, "rate": _ratio(n_subprocess, n_total)},
+                "S4_training_completed": {"count": n_completed, "rate": _ratio(n_completed, n_total)},
+                "S5_metrics_recovered":  {"count": n_metrics, "rate": _ratio(n_metrics, n_total)},
+            },
+            "conditional": {
+                "P_S2_given_S1": _ratio(n_valid_json, n_total),
+                "P_S3_given_S2": _ratio(n_subprocess, n_valid_json),
+                "P_S4_given_S3": _ratio(n_completed, n_subprocess),
+                "P_S5_given_S4": _ratio(n_metrics, n_completed),
+            },
+        }
+
+    def print_reliability_report(self):
+        """Pretty-print the per-stage reliability table to stdout."""
+        stats = self.reliability_stats()
+        if stats.get("n_total", 0) == 0:
+            print("No experiments logged yet.")
+            return
+        print("=" * 64)
+        print(f"AGENT RELIABILITY REPORT (over {stats['n_total']} logged experiments)")
+        print("=" * 64)
+        print(f"{'Stage':<32s}{'Count':>10s}{'Rate':>10s}{'Cond.':>10s}")
+        print("-" * 64)
+        cum = stats["cumulative"]
+        cond = stats["conditional"]
+        rows = [
+            ("S1 LLM produced text",       cum["S1_llm_response"],       1.0),
+            ("S2 valid JSON parsed",       cum["S2_valid_json"],         cond["P_S2_given_S1"]),
+            ("S3 subprocess started",      cum["S3_subprocess_started"], cond["P_S3_given_S2"]),
+            ("S4 training completed",      cum["S4_training_completed"], cond["P_S4_given_S3"]),
+            ("S5 metrics recovered",       cum["S5_metrics_recovered"],  cond["P_S5_given_S4"]),
+        ]
+        for name, c, p_cond in rows:
+            print(f"{name:<32s}{c['count']:>10d}{c['rate']:>10.3f}{p_cond:>10.3f}")
+        print("=" * 64)
+        print("Cond. = P(this stage succeeds | previous stage succeeded).")
+        print("Lowest conditional rate identifies the weakest link in the pipeline.")

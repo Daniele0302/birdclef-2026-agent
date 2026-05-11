@@ -1,9 +1,40 @@
-# Dati (troppo pesanti per GitHub)
+# Competition data — too heavy for git
 data/
-__pycache__/
-.venv/
-*.pyc
 
-# File temporanei
-*.tmp
+# Python environments and caches
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Training artefacts — too heavy for git (Kaggle Dataset has them)
+*.keras
+*.weights.h5
+.patched_*.keras
+cache/
+
+# Generated outputs from agent runs
+generated_code/
+
+# LaTeX build artefacts
+*.aux
+*.synctex.gz
+*.fdb_latexmk
+*.fls
+*.bbl
+*.blg
+*.toc
+report.tex.zip
+_1_5cm*.pdf
+
+# OS / editor noise
 .DS_Store
+.idea/
+.vscode/
+.Rhistory
+*.tmp
+*.swp
+
+# Bulky logs we keep locally only (the JSON logs in experiments/ stay tracked)
+train_*.log
+eval_*.log

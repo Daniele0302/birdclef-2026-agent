@@ -1,0 +1,65 @@
+{
+  "best_macro_auc": 0.626109519973697,
+  "history": [
+    {
+      "phase": "P1",
+      "epoch": 1,
+      "soundscape_macro_auc": 0.6178150833548866
+    },
+    {
+      "phase": "P1",
+      "epoch": 2,
+      "soundscape_macro_auc": 0.573923108442648
+    },
+    {
+      "phase": "P1",
+      "epoch": 3,
+      "soundscape_macro_auc": 0.5681202240180695
+    },
+    {
+      "phase": "P1",
+      "epoch": 4,
+      "soundscape_macro_auc": 0.568281149344437
+    },
+    {
+      "phase": "P2",
+      "epoch": 1,
+      "soundscape_macro_auc": 0.6085200621551843
+    },
+    {
+      "phase": "P2",
+      "epoch": 2,
+      "soundscape_macro_auc": 0.6028782922656619
+    },
+    {
+      "phase": "P2",
+      "epoch": 3,
+      "soundscape_macro_auc": 0.626109519973697
+    },
+    {
+      "phase": "P2",
+      "epoch": 4,
+      "soundscape_macro_auc": 0.6120168978847351
+    },
+    {
+      "phase": "P2",
+      "epoch": 5,
+      "soundscape_macro_auc": 0.6105023403277221
+    }
+  ],
+  "config": {
+    "max_per_class_focal": 50,
+    "max_total_focal": 8000,
+    "soundscape_val_frac": 0.2,
+    "phase1_epochs": 4,
+    "phase2_epochs": 5,
+    "phase1_lr": 0.0003,
+    "phase2_lr": 5e-05,
+    "unfreeze_layers": 30,
+    "mixup_alpha": 0.2,
+    "batch_size": 16,
+    "n_focal": 8000,
+    "n_soundscape_train": 1166,
+    "n_soundscape_val": 312
+  }
+}

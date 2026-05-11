@@ -1,0 +1,30 @@
+{
+  "best_macro_auc": 0.5785172277202907,
+  "history": [
+    {
+      "phase": "P1",
+      "epoch": 1,
+      "soundscape_macro_auc": 0.4712751739339066
+    },
+    {
+      "phase": "P1",
+      "epoch": 2,
+      "soundscape_macro_auc": 0.5785172277202907
+    },
+    {
+      "phase": "P2",
+      "epoch": 1,
+      "soundscape_macro_auc": 0.5670199323443716
+    },
+    {
+      "phase": "P2",
+      "epoch": 2,
+      "soundscape_macro_auc": 0.5742208813011721
+    },
+    {
+      "phase": "P2",
+      "epoch": 3,
+      "soundscape_macro_auc": 0.5547781934814634
+    }
+  ]
+}
