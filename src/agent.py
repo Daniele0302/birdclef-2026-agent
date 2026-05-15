@@ -126,7 +126,7 @@ def run_experiment_from_params(params, config_path):
             [sys.executable, TEMPLATE_PATH, '--config', config_path],
             capture_output=True,
             text=True,
-            timeout=1800,  # 30 min per EfficientNet con fine-tuning a due fasi
+            timeout=1800,  # 30 min — accommodates EfficientNet with two-phase fine-tuning
             cwd=PROJECT_ROOT  # so the template resolves data/ and cache/ paths against the root
         )
 

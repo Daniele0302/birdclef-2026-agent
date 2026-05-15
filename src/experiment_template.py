@@ -63,7 +63,7 @@ def make_melspec(y, sr, params):
     import librosa
     top_db = params.get("top_db", 80.0)
     
-    # mel_scale: "htk" usa htk=True, qualsiasi altro valore usa htk=False
+    # mel_scale: "htk" → htk=True, anything else → htk=False
     use_htk = params.get("mel_scale", "htk") == "htk"
     
     # Fix: Gemma sometimes sends "null" as string instead of None
@@ -192,10 +192,9 @@ def augment_batch(X, params):
     elif aug_type == "background_noise":
         import librosa
         import glob
-        soundscapes_dir = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            "data", "train_soundscapes"
-        )
+        # This module lives in src/; data/ is at the repo root (one level up).
+        _root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        soundscapes_dir = os.path.join(_root, "data", "train_soundscapes")
         noise_files = glob.glob(os.path.join(soundscapes_dir, "*.ogg"))
         if noise_files:
             alpha = params.get("augmentation_noise", 0.1)
@@ -356,8 +355,10 @@ def run_experiment(params):
     print(f"{'='*60}")
     print(f"Parameters: {json.dumps(params, indent=2)}")
 
-    # --- Carica dati ---
-    data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+    # --- Load data ---
+    # This script lives in src/; the data/ folder is at the repo root.
+    _root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    data_dir = os.path.join(_root_dir, "data")
     train_csv = os.path.join(data_dir, "train.csv")
     taxonomy_csv = os.path.join(data_dir, "taxonomy.csv")
     audio_dir = os.path.join(data_dir, "train_audio")
@@ -534,9 +535,9 @@ def run_experiment(params):
             y_soundscape_val = None
         print(f"Dataset: {X.shape[0]} samples, shape={X.shape[1:]}")
 
-    # --- Split FISSO ---
-    # Validation sempre uguale per confronto comparabile tra esperimenti
-    # Usiamo sempre gli stessi indici indipendentemente da max_samples
+    # --- Fixed split ---
+    # Same validation indices across every experiment, so results are
+    # comparable regardless of max_samples.
     np.random.seed(42)
     n_total = len(spectrograms)
     val_size = max(100, int(n_total * 0.2))
