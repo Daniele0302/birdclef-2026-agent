@@ -117,6 +117,7 @@ ollama serve
 
 ```
 birdclef-agent/
+│
 ├── agent.py                          # main loop
 ├── llm_provider.py                   # local Ollama client
 ├── code_executor.py                  # sandboxed subprocess runner
@@ -125,9 +126,9 @@ birdclef-agent/
 ├── config.py                         # central configuration
 ├── baseline_model.py                 # manual CNN-from-scratch baseline
 │
-├── utils/
-│   ├── audio_pipeline.py             # audio → mel-spectrogram
-│   └── data_loader.py                # dataset + label encoding
+├── utils/                            # audio + data plumbing
+│   ├── audio_pipeline.py             #   audio → mel-spectrogram
+│   └── data_loader.py                #   dataset + label encoding
 │
 ├── train_strong_v40{,b,c}.py         # scaling-up ensemble members
 ├── train_seed_member.py              # multi-seed training
@@ -138,22 +139,24 @@ birdclef-agent/
 ├── eval_v40_local.py                 # local soundscape macro-AUC eval
 ├── eval_v40_3way.py                  # 3-way ensemble eval
 ├── eval_v40_full_ensemble.py         # greedy forward selection over models
-├── analyze_agent.py                  # log analysis
-├── analyze_cv.py
+├── analyze_agent.py                  # log analysis tool
+├── analyze_cv.py                     # CV ablation analysis tool
 │
-├── v34_exp78_3view_tta.ipynb                # submission 2 — agent baseline (LB 0.592)
-├── birdclef_submission_v41_ensemble.ipynb   # submission 3 (LB 0.598)
-├── birdclef_submission_v44_uniform3.ipynb   # submission 5 — CPU best (LB 0.633)
-├── birdclef_submission_v55_v50only.ipynb    # submission 6 — at-scale check (LB 0.725)
+├── submissions/                      # Kaggle submission notebooks
+│   ├── v34_exp78_3view_tta.ipynb           #   submission 2 — agent baseline (LB 0.592)
+│   ├── v41_2way_ensemble.ipynb             #   submission 3 (LB 0.598)
+│   ├── v44_3way_uniform_ensemble.ipynb     #   submission 5 — CPU best  (LB 0.633)
+│   └── v55_gpu_at_scale.ipynb              #   submission 6 — at-scale  (LB 0.725)
 │
-├── experiments/
-│   ├── experiment_log.json           # 108 logged experiments
-│   ├── params_001…060.json           # per-iteration LLM-generated params
-│   └── retest_*.json, final_*.json   # scaling-up params
+├── experiments/                      # the agent's own evidence
+│   ├── experiment_log.json           #   108 logged experiments (full traces)
+│   ├── params_001…060.json           #   per-iteration LLM-generated params
+│   └── retest_*.json, final_*.json   #   scaling-up params (manual)
 │
-├── agent_reliability_stats.json      # per-stage reliability output
-├── eval_*.json                       # per-configuration eval results
-├── *_log.json                        # scaling-up training logs
+├── results/                          # snapshots of computed metrics
+│   ├── agent_reliability_stats.json  #   per-stage reliability output
+│   ├── eval_*.json                   #   per-configuration eval results
+│   └── *_log.json                    #   scaling-up training logs
 │
 ├── report.pdf                        # final write-up
 ├── requirements.txt
@@ -167,7 +170,7 @@ Pretrained ImageNet weights and trained `*.keras` models are not committed — t
 1. Reproduce the autonomous exploration phase: `.venv/bin/python agent.py`. The agent identifies EfficientNetB0 + tuned mel-spectrogram as the best CPU-feasible configuration.
 2. Train the scaling-up ensemble: `.venv/bin/python train_strong_v40.py`, then `train_seed_member.py --seed 2 …` for additional seeds.
 3. Open `train_gpu_v50.ipynb` on Kaggle with a T4 GPU and run all cells (~1 h). The output `model_v50.keras` is the model that scored 0.725 on the public LB.
-4. Upload `model_v50.keras` to a Kaggle Dataset and run `birdclef_submission_v55_v50only.ipynb` as a CPU notebook (~30 min) to produce `submission.csv`.
+4. Upload `model_v50.keras` to a Kaggle Dataset and run `submissions/v55_gpu_at_scale.ipynb` as a CPU notebook (~30 min) to produce `submission.csv`.
 
 ## Team
 
