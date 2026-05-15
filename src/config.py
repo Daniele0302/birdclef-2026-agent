@@ -11,8 +11,11 @@ import os
 # DATA PATHS
 # =============================================================
 # Where the files downloaded from Kaggle are located
-# Change these paths according to where you placed the data
-DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+# Repo root (this file lives in src/).
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Paths to the competition data — everything resolves against the repo root.
+DATA_DIR = os.path.join(_PROJECT_ROOT, "data")
 TRAIN_CSV = os.path.join(DATA_DIR, "train.csv")
 TAXONOMY_CSV = os.path.join(DATA_DIR, "taxonomy.csv")
 TRAIN_AUDIO_DIR = os.path.join(DATA_DIR, "train_audio")
@@ -20,9 +23,9 @@ TRAIN_SOUNDSCAPES_DIR = os.path.join(DATA_DIR, "train_soundscapes")
 TRAIN_SOUNDSCAPES_LABELS = os.path.join(DATA_DIR, "train_soundscapes_labels.csv")
 SAMPLE_SUBMISSION_CSV = os.path.join(DATA_DIR, "sample_submission.csv")
 
-# Where to save agent experiments
-EXPERIMENTS_DIR = os.path.join(os.path.dirname(__file__), "experiments")
-GENERATED_CODE_DIR = os.path.join(os.path.dirname(__file__), "generated_code")
+# Where the agent stores its outputs (also relative to the repo root).
+EXPERIMENTS_DIR = os.path.join(_PROJECT_ROOT, "experiments")
+GENERATED_CODE_DIR = os.path.join(_PROJECT_ROOT, "generated_code")
 
 # =============================================================
 # AUDIO / MEL-SPECTROGRAM PARAMETERS

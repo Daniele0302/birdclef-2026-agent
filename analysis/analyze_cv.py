@@ -15,9 +15,12 @@ import json
 import os
 import sys
 
-# This script lives in analysis/; the agent's modules sit at the repo root.
-# Ensure that experiment_template (at the root) is importable here.
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# This script lives in analysis/; the agent's modules sit under src/.
+# Add both the repo root and src/ to sys.path so 'experiment_template'
+# (in src/) and 'utils' (at root) can be imported.
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, _ROOT)
+sys.path.insert(0, os.path.join(_ROOT, "src"))
 
 import numpy as np
 import pandas as pd

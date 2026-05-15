@@ -15,7 +15,12 @@ import time
 from llm_provider import call_llm
 from memory import ExperimentMemory
 
-EXPERIMENTS_DIR = "experiments"
+# Resolve key paths relative to the repo root, so this script works
+# regardless of the user's cwd. agent.py lives in src/.
+SRC_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(SRC_DIR)
+EXPERIMENTS_DIR = os.path.join(PROJECT_ROOT, "experiments")
+TEMPLATE_PATH = os.path.join(SRC_DIR, "experiment_template.py")
 os.makedirs(EXPERIMENTS_DIR, exist_ok=True)
 
 SYSTEM_PROMPT = """You are an autonomous ML research agent for BirdCLEF 2026 (Track B).
@@ -118,10 +123,11 @@ def run_experiment_from_params(params, config_path):
 
     try:
         result = subprocess.run(
-            [sys.executable, 'experiment_template.py', '--config', config_path],
+            [sys.executable, TEMPLATE_PATH, '--config', config_path],
             capture_output=True,
             text=True,
-            timeout=1800  # 30 min per EfficientNet con fine-tuning a due fasi
+            timeout=1800,  # 30 min per EfficientNet con fine-tuning a due fasi
+            cwd=PROJECT_ROOT  # so the template resolves data/ and cache/ paths against the root
         )
 
         metrics = None

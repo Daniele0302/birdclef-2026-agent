@@ -10,7 +10,9 @@ import json
 import os
 from datetime import datetime
 
-EXPERIMENTS_DIR = "experiments"
+# Resolve experiments/ against the repo root (this file lives in src/).
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+EXPERIMENTS_DIR = os.path.join(_PROJECT_ROOT, "experiments")
 LOG_FILE = os.path.join(EXPERIMENTS_DIR, "experiment_log.json")
 
 

@@ -16,8 +16,13 @@ IMPORTANT: you must have the data in the data/ folder
 """
 
 import os
+import sys
 import json
 import numpy as np
+
+# This module lives in src/; make the repo root importable so that 'utils'
+# (audio_pipeline, data_loader) resolves correctly.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Check that TensorFlow is available
 try:

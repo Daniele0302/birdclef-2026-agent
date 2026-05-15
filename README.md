@@ -13,7 +13,7 @@ An autonomous research agent that designs, runs, evaluates and iterates on deep-
 | **Best CPU-feasible focal val. macro-AUC** | 0.8533 |
 | **Architecture verified at scale (Kaggle public LB)** | 0.725 |
 
-The full write-up is in [`report.pdf`](report.pdf).
+The full write-up is in [`report/report.pdf`](report/report.pdf).
 
 ## What this repository is
 
@@ -107,24 +107,25 @@ data/sample_submission.csv
 # Terminal 1
 ollama serve
 
-# Terminal 2
-.venv/bin/python agent.py
+# Terminal 2 — run from the repo root
+.venv/bin/python src/agent.py
 ```
 
-`MAX_ITERATIONS = 10` is set in `config.py`. At the end of the run the agent prints the reliability report above and appends new entries to `experiments/experiment_log.json`.
+`MAX_ITERATIONS = 10` is set in `src/config.py`. At the end of the run the agent prints the reliability report above and appends new entries to `experiments/experiment_log.json`.
 
 ## Project structure
 
 ```
 birdclef-agent/
 │
-├── agent.py                          # main loop
-├── llm_provider.py                   # local Ollama client
-├── code_executor.py                  # sandboxed subprocess runner
-├── memory.py                         # JSON memory + reliability metrics
-├── experiment_template.py            # fixed Keras training script
-├── config.py                         # central configuration
-├── baseline_model.py                 # manual CNN-from-scratch baseline
+├── src/                              # the agent's core (7 modules)
+│   ├── agent.py                      #   main loop
+│   ├── llm_provider.py               #   local Ollama client
+│   ├── code_executor.py              #   sandboxed subprocess runner
+│   ├── memory.py                     #   JSON memory + reliability metrics
+│   ├── experiment_template.py        #   fixed Keras training script
+│   ├── config.py                     #   central configuration
+│   └── baseline_model.py             #   manual CNN-from-scratch baseline
 │
 ├── utils/                            # audio + data plumbing
 │   ├── audio_pipeline.py             #   audio → mel-spectrogram
@@ -160,7 +161,8 @@ birdclef-agent/
 │   ├── eval_*.json                   #   per-configuration eval results
 │   └── *_log.json                    #   scaling-up training logs
 │
-├── report.pdf                        # final write-up
+├── report/
+│   └── report.pdf                    # final write-up
 ├── requirements.txt
 └── README.md
 ```
