@@ -1,7 +1,7 @@
 """
 agent.py — Autonomous BirdCLEF 2026 agent (v3 - multi-architecture)
 
-What's new v3:
+Features:
 - The LLM can choose between a custom CNN and EfficientNet (transfer learning)
 - Augmentation types: noise, time_shift, freq_mask, all
 - Fine-tuning: unfreeze_layers for EfficientNet
@@ -234,9 +234,7 @@ Focus on whether to use CNN or EfficientNet and why."""
     print(f"Best AUC: {memory.best_auc}")
     print(f"{'='*60}\n")
 
-    # Per-stage reliability report (this run + all previous runs in the log).
-    # The professor specifically asked for these metrics: how reliably does the
-    # agent move through Load -> Generate -> Run -> Execute -> Validate?
+   
     memory.print_reliability_report()
 
 

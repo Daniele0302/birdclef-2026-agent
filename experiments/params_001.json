@@ -1,9 +1,9 @@
 {
-  "experiment_name": "hop320_topdb80_optimized",
+  "experiment_name": "explore_hop320_top80_epochs15",
   "model_type": "efficientnet",
   "learning_rate": 0.0003,
   "batch_size": 16,
-  "epochs": 10,
+  "epochs": 15,
   "n_filters_1": 0,
   "n_filters_2": 0,
   "n_filters_3": 0,
