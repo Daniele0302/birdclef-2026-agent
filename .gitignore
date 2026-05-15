@@ -38,9 +38,8 @@ _1_5cm*.pdf
 # Bulky logs we keep locally only (the JSON logs in experiments/ stay tracked)
 train_*.log
 eval_*.log
-.claude/
 
-# Extra patterns added during repo cleanup
+# Miscellaneous artefacts
 *.rtf
 experiments_fast/
 report.tex
