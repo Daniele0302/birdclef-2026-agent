@@ -12,7 +12,8 @@ import itertools
 import numpy as np
 from sklearn.metrics import roc_auc_score
 
-PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+# Script lives in scaling_up/; PROJECT_DIR points to the repo root.
+PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CACHE_DIR = os.path.join(PROJECT_DIR, "cache")
 CACHE_SC_X = os.path.join(CACHE_DIR, "specs_soundscape_v40.npy")
 CACHE_SC_Y = os.path.join(CACHE_DIR, "labels_soundscape_v40.npy")

@@ -130,17 +130,19 @@ birdclef-agent/
 │   ├── audio_pipeline.py             #   audio → mel-spectrogram
 │   └── data_loader.py                #   dataset + label encoding
 │
-├── train_strong_v40{,b,c}.py         # scaling-up ensemble members
-├── train_seed_member.py              # multi-seed training
-├── train_focal_member.py             # focal-loss variant
-├── train_kfold_cv.py                 # 5-fold CV ablation
-├── train_gpu_v50.ipynb               # final GPU training (Kaggle T4)
+├── scaling_up/                       # at-scale verification (Section 4 of the report)
+│   ├── train_strong_v40{,b,c}.py     #   ensemble members
+│   ├── train_seed_member.py          #   multi-seed training
+│   ├── train_focal_member.py         #   focal-loss variant
+│   ├── train_kfold_cv.py             #   5-fold CV ablation
+│   ├── train_gpu_v50.ipynb           #   final GPU training (Kaggle T4)
+│   ├── eval_v40_local.py             #   local soundscape macro-AUC eval
+│   ├── eval_v40_3way.py              #   3-way ensemble eval
+│   └── eval_v40_full_ensemble.py     #   greedy forward selection over models
 │
-├── eval_v40_local.py                 # local soundscape macro-AUC eval
-├── eval_v40_3way.py                  # 3-way ensemble eval
-├── eval_v40_full_ensemble.py         # greedy forward selection over models
-├── analyze_agent.py                  # log analysis tool
-├── analyze_cv.py                     # CV ablation analysis tool
+├── analysis/                         # offline analysis tools
+│   ├── analyze_agent.py              #   experiment-log analysis
+│   └── analyze_cv.py                 #   CV ablation analysis
 │
 ├── submissions/                      # Kaggle submission notebooks
 │   ├── v34_exp78_3view_tta.ipynb           #   submission 2 — agent baseline (LB 0.592)
@@ -167,9 +169,11 @@ Pretrained ImageNet weights and trained `*.keras` models are not committed — t
 
 ## Reproducing the result
 
+Run every command from the repo root.
+
 1. Reproduce the autonomous exploration phase: `.venv/bin/python agent.py`. The agent identifies EfficientNetB0 + tuned mel-spectrogram as the best CPU-feasible configuration.
-2. Train the scaling-up ensemble: `.venv/bin/python train_strong_v40.py`, then `train_seed_member.py --seed 2 …` for additional seeds.
-3. Open `train_gpu_v50.ipynb` on Kaggle with a T4 GPU and run all cells (~1 h). The output `model_v50.keras` is the model that scored 0.725 on the public LB.
+2. Train the scaling-up ensemble: `.venv/bin/python scaling_up/train_strong_v40.py`, then `scaling_up/train_seed_member.py --seed 2 …` for additional seeds.
+3. Open `scaling_up/train_gpu_v50.ipynb` on Kaggle with a T4 GPU and run all cells (~1 h). The output `model_v50.keras` is the model that scored 0.725 on the public LB.
 4. Upload `model_v50.keras` to a Kaggle Dataset and run `submissions/v55_gpu_at_scale.ipynb` as a CPU notebook (~30 min) to produce `submission.csv`.
 
 ## Team

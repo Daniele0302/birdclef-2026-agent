@@ -13,6 +13,11 @@ Examples:
 import argparse
 import json
 import os
+import sys
+
+# This script lives in analysis/; the agent's modules sit at the repo root.
+# Ensure that experiment_template (at the root) is importable here.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import numpy as np
 import pandas as pd

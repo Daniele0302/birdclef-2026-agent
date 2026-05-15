@@ -75,7 +75,9 @@ DENSE_UNITS       = 256
 DROPOUT_RATE      = 0.4
 MIXUP_ALPHA       = 0.2
 
-PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+# PROJECT_DIR is the repo root: this script lives in scaling_up/, so go up one level
+# so that DATA_DIR, CACHE_DIR and model artefacts resolve relative to the root.
+PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR    = os.path.join(PROJECT_DIR, "data")
 CACHE_DIR   = os.path.join(PROJECT_DIR, "cache")
 os.makedirs(CACHE_DIR, exist_ok=True)
