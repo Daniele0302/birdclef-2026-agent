@@ -222,8 +222,7 @@ birdclef-agent/
 ├── report/
 │   └── report.pdf                    # final write-up
 ├── video/
-│   ├── BIRDCLEF+2026_VIDEO.mp4       # 5-minute demo (1080p, ~18 MB)
-│   └── README.md                     # what's in the video
+│   └── README.md                     # link to the 5-minute YouTube demo
 ├── requirements.txt
 └── README.md
 ```
