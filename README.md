@@ -21,9 +21,17 @@ An autonomous research agent, not a model-tuning project. The deliverable is the
 
 ## How the agent works
 
-A closed **propose → generate → execute → evaluate → analyse → iterate** loop, all under a CPU compute budget:
+A closed **explore → propose → generate → execute → evaluate → analyse → iterate** loop, all under a CPU compute budget:
 
 ```
+   ┌──────────────────────────┐
+   │  Load & explore data     │   data_exploration.py (runs once at startup)
+   │  taxonomy / class counts │
+   │  per-species histogram   │
+   │  audio probe             │
+   └──────────┬───────────────┘
+              │ DATASET FACTS block injected into every prompt
+              ▼
    ┌────────────────────────┐
    │  Local LLM             │
    │  (Gemma 4 E4B, Ollama) │
@@ -54,6 +62,48 @@ A closed **propose → generate → execute → evaluate → analyse → iterate
 ```
 
 The audio pipeline (mel-spectrogram parameters, normalisation, label encoding) is **locked** inside `experiment_template.py` — the LLM only fills in a strict JSON parameter file. This keeps the data path human-written, human-reviewable, and resilient to small bugs the LLM would otherwise silently introduce.
+
+## What the agent sees first
+
+Before the loop starts, `src/data_exploration.py` runs a one-shot pass over the training data so every subsequent LLM prompt is grounded in what's actually in the dataset:
+
+```
+======================================================================
+DATA EXPLORATION  —  what the agent sees before it starts proposing
+======================================================================
+Target species (taxonomy)        : 234
+  · Aves          162
+  · Amphibia       35
+  · Insecta        28
+  · Mammalia        8
+  · Reptilia        1
+----------------------------------------------------------------------
+Focal training recordings        : 35549
+Species with at least one clip   : 206  (of 234)
+Files per species   min / median / max / mean : 1 / 125 / 499 / 172.6
+Species with zero focal audio    : 28  → 234-class problem is effectively long-tailed
+----------------------------------------------------------------------
+Soundscape audio files in pool   : 10658
+Labelled 5-second windows        : 1478  (across 66 files)
+  · windows w/ >1 species label  : 1322  → confirms the multi-label nature
+----------------------------------------------------------------------
+Audio probe (12 files):
+  · sample rate(s)  : [32000] Hz
+  · duration (s)    : min=0.14, median=19.23, mean=25.06, max=65.98
+======================================================================
+```
+
+A compact text block is then prepended to every LLM prompt:
+
+```
+DATASET FACTS (computed once at agent startup):
+- 234 target species (162 Aves, 35 Amphibia, 28 Insecta, 8 Mammalia, 1 Reptilia); 206 have focal audio, 28 have none.
+- 35549 focal recordings; files/species range 1-499 (median 125, mean 172.6) → heavy class imbalance, long-tailed.
+- 10658 soundscape files in pool, only 1478 5-second windows are labelled (across 66 files); 1322 of those windows contain >1 species → multi-label is the rule, not the exception.
+- audio format: sample-rate [32000] Hz, clip duration median 17.64s, max 61.78s.
+```
+
+The full report is also persisted to `experiments/data_exploration.json` (top/bottom-10 species by file count, list of the 28 species without focal audio, etc.).
 
 ## Pipeline reliability
 
@@ -111,15 +161,22 @@ ollama serve
 .venv/bin/python src/agent.py
 ```
 
-`MAX_ITERATIONS = 10` is set in `src/config.py`. At the end of the run the agent prints the reliability report above and appends new entries to `experiments/experiment_log.json`.
+`MAX_ITERATIONS = 10` is set in `src/config.py`. The agent first runs the data-exploration pass (Section *"What the agent sees first"* above), then loops on autonomous experiments. At the end of the run it prints the reliability report and appends new entries to `experiments/experiment_log.json`.
+
+The exploration pass can also be run on its own:
+
+```bash
+.venv/bin/python src/data_exploration.py
+```
 
 ## Project structure
 
 ```
 birdclef-agent/
 │
-├── src/                              # the agent's core (7 modules)
+├── src/                              # the agent's core (8 modules)
 │   ├── agent.py                      #   main loop
+│   ├── data_exploration.py           #   load & explore data (runs once at startup)
 │   ├── llm_provider.py               #   local Ollama client
 │   ├── code_executor.py              #   sandboxed subprocess runner
 │   ├── memory.py                     #   JSON memory + reliability metrics
@@ -153,6 +210,7 @@ birdclef-agent/
 │
 ├── experiments/                      # the agent's own evidence
 │   ├── experiment_log.json           #   108 logged experiments (full traces)
+│   ├── data_exploration.json         #   one-shot dataset summary (from startup)
 │   ├── params_001…060.json           #   per-iteration LLM-generated params
 │   └── retest_*.json, final_*.json   #   scaling-up params (manual)
 │
