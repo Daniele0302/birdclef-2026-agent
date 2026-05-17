@@ -1,0 +1,160 @@
+{
+  "taxonomy": {
+    "n_target_species": 234,
+    "species_per_taxonomic_class": {
+      "Aves": 162,
+      "Amphibia": 35,
+      "Insecta": 28,
+      "Mammalia": 8,
+      "Reptilia": 1
+    }
+  },
+  "focal_training_set": {
+    "n_recordings": 35549,
+    "n_species_present": 206,
+    "files_per_species": {
+      "n": 206,
+      "min": 1,
+      "median": 125,
+      "mean": 172.6,
+      "max": 499,
+      "total": 35549
+    },
+    "top_10_most_recorded": [
+      {
+        "species": "rubthr1",
+        "files": 499
+      },
+      {
+        "species": "banana",
+        "files": 498
+      },
+      {
+        "species": "fepowl",
+        "files": 497
+      },
+      {
+        "species": "soulap1",
+        "files": 497
+      },
+      {
+        "species": "houspa",
+        "files": 496
+      },
+      {
+        "species": "coffal1",
+        "files": 495
+      },
+      {
+        "species": "osprey",
+        "files": 495
+      },
+      {
+        "species": "socfly1",
+        "files": 494
+      },
+      {
+        "species": "compau",
+        "files": 493
+      },
+      {
+        "species": "yeofly1",
+        "files": 493
+      }
+    ],
+    "bottom_10_least_recorded": [
+      {
+        "species": "64898",
+        "files": 3
+      },
+      {
+        "species": "74580",
+        "files": 3
+      },
+      {
+        "species": "sptnig1",
+        "files": 3
+      },
+      {
+        "species": "209233",
+        "files": 2
+      },
+      {
+        "species": "24321",
+        "files": 2
+      },
+      {
+        "species": "70711",
+        "files": 2
+      },
+      {
+        "species": "116570",
+        "files": 1
+      },
+      {
+        "species": "23150",
+        "files": 1
+      },
+      {
+        "species": "23724",
+        "files": 1
+      },
+      {
+        "species": "516975",
+        "files": 1
+      }
+    ]
+  },
+  "species_with_no_focal_audio": {
+    "count": 28,
+    "species": [
+      "1491113",
+      "25073",
+      "47158son01",
+      "47158son02",
+      "47158son03",
+      "47158son04",
+      "47158son05",
+      "47158son06",
+      "47158son07",
+      "47158son08",
+      "47158son09",
+      "47158son10",
+      "47158son11",
+      "47158son12",
+      "47158son13",
+      "47158son14",
+      "47158son15",
+      "47158son16",
+      "47158son17",
+      "47158son18",
+      "47158son19",
+      "47158son20",
+      "47158son21",
+      "47158son22",
+      "47158son23",
+      "47158son24",
+      "47158son25",
+      "517063"
+    ]
+  },
+  "soundscapes": {
+    "files_in_pool": 10658,
+    "labelled_5s_windows": 1478,
+    "labelled_unique_files": 66,
+    "windows_with_multiple_species": 1322,
+    "note": "the labelled subset is the basis for the soundscape-aware validation split used to verify the agent's architecture choice at scale"
+  },
+  "audio_format_probe": {
+    "probed": 12,
+    "sample_rate_hz": [
+      32000
+    ],
+    "duration_seconds": {
+      "min": 0.14,
+      "median": 19.23,
+      "mean": 25.06,
+      "max": 65.98
+    }
+  }
+}

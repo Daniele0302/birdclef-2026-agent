@@ -92,9 +92,10 @@ STRATEGY:
 
 Respond with ONLY the JSON."""
 
-def build_prompt(memory_summary):
+def build_prompt(memory_summary, dataset_facts=""):
     return f"""{SYSTEM_PROMPT}
 
+{dataset_facts}
 Previous experiments and results:
 {memory_summary}
 
@@ -158,6 +159,17 @@ def run_experiment_from_params(params, config_path):
 
 
 def main():
+    # Step 0 of the agent loop: load and explore the competition training data,
+    # so every subsequent proposal is grounded in what's actually in the dataset
+    # (class counts, taxa breakdown, audio format, soundscape-label coverage).
+    # The full summary is printed and persisted to
+    # experiments/data_exploration.json; a compact textual block is then
+    # injected into every LLM prompt so the agent reasons over real facts
+    # rather than generic priors.
+    from data_exploration import explore_dataset, to_prompt_block
+    exploration_report = explore_dataset()
+    dataset_facts = to_prompt_block(exploration_report)
+
     memory = ExperimentMemory()
 
     N_ITERATIONS = 10
@@ -176,7 +188,7 @@ def main():
         # Step 1: Request parameters
         print("\n[1/4] Asking the LLM to propose parameters...")
         memory_summary = memory.summarize_recent(n=15)
-        prompt = build_prompt(memory_summary)
+        prompt = build_prompt(memory_summary, dataset_facts=dataset_facts)
         raw_response = call_llm(prompt)
         print(f"LLM response: {raw_response[:500]}")
 
