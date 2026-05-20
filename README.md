@@ -228,6 +228,8 @@ birdclef-agent/
 │
 ├── report/
 │   └── report.pdf                    # final write-up
+├── kaggle/                           # Kaggle submission history (deliverable D2)
+│   └── submission_history.png        #   screenshot of the Submissions tab
 ├── video/
 │   └── README.md                     # link to the 5-minute YouTube demo
 ├── requirements.txt
