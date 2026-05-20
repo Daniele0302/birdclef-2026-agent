@@ -240,7 +240,7 @@ Pretrained ImageNet weights and trained `*.keras` models are not committed — t
 
 Run every command from the repo root.
 
-1. Reproduce the autonomous exploration phase: `.venv/bin/python agent.py`. The agent identifies EfficientNetB0 + tuned mel-spectrogram as the best CPU-feasible configuration.
+1. Reproduce the autonomous exploration phase: `.venv/bin/python src/agent.py`. The agent identifies EfficientNetB0 + tuned mel-spectrogram as the best CPU-feasible configuration.
 2. Train the scaling-up ensemble: `.venv/bin/python scaling_up/train_strong_v40.py`, then `scaling_up/train_seed_member.py --seed 2 …` for additional seeds.
 3. Open `scaling_up/train_gpu_v50.ipynb` on Kaggle with a T4 GPU and run all cells (~1 h). The output `model_v50.keras` is the model that scored 0.725 on the public LB.
 4. Upload `model_v50.keras` to a Kaggle Dataset and run `submissions/v55_gpu_at_scale.ipynb` as a CPU notebook (~30 min) to produce `submission.csv`.
