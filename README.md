@@ -200,7 +200,14 @@ birdclef-agent/
 │
 ├── analysis/                         # offline analysis tools
 │   ├── analyze_agent.py              #   experiment-log analysis
-│   └── analyze_cv.py                 #   CV ablation analysis
+│   ├── analyze_cv.py                 #   CV ablation analysis
+│   └── make_figures.py              #   regenerates every report/video chart from raw data
+│
+├── figures/                          # charts produced by make_figures.py
+│   ├── fig_discovery_trajectory.png  #   report Fig. 3 / video Block 5
+│   ├── fig_reliability_bars.png      #   report Fig. 2
+│   ├── fig_distribution_shift.png    #   video Block 6
+│   └── fig_submission_progression.png#   video Block 6
 │
 ├── submissions/                      # Kaggle submission notebooks
 │   ├── v34_exp78_3view_tta.ipynb           #   submission 2 — agent baseline (LB 0.592)
